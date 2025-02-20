@@ -4,11 +4,11 @@ The first step is to create and configure your modules.
 For this example, we will create tow `classes` `Parent` and `Child`
 
 ```ts
-import  { IBaseModule, TableBuilder, ColumnType, IQueryResultItem } from 'expo-sqlite-wrapper'
+import  { Table, ColumnType, IQueryResultItem } from 'react-native-sqlite-orm'
 
 // We created `TableNames` so that it will be simpler when you are working in typescript
 export type TableNames = "Parents" | "Childrens";
-export class Parent extends IBaseModule<TableNames>{
+export class Parent extends Table<TableNames>{
  name: string;
  email: string;
  // Using IQueryResultItem is optional, you could simple use Child[]
@@ -22,8 +22,7 @@ export class Parent extends IBaseModule<TableNames>{
   
   // This method will return the table setup that we will be using later on in `repository`
   static GetTableStructor() {
-    return TableBuilder<Parent, TableNames>("Parents").
-    column("id").primary.autoIncrement.number.
+    return Table.TableBuilder<Parent, TableNames>("Parents").
     column("name").
     objectPrototype(Parent.prototype).
     //unique acts as an Id too as the library will chack if there exist an item with the same field value and will update instead.
@@ -36,7 +35,7 @@ export class Parent extends IBaseModule<TableNames>{
 And then we have `Child`
 
 ```ts
-export class Child extends IBaseModule<TableNames>{
+export class Child extends Table<TableNames>{
  someField: string;
  parentId?: number;
  constructor(someField:string, parentId?: number ){
@@ -46,8 +45,7 @@ export class Child extends IBaseModule<TableNames>{
  }
   
   static GetTableStructor() {
-    return TableBuilder<Child, TableNames>("Childrens").
-    column("id").primary.autoIncrement.number.
+    return Table.TableBuilder<Child, TableNames>("Childrens").
     column("someField").
     column("parentId").number.nullable.
     constrain<Parent>("parentId", "Parents", "id").
@@ -70,6 +68,8 @@ With this we are done with our modules.
 `json` the column is a json(string), the lib will stringify and parse the column when called. this is so you could save an objects
 
 `boolean` the column is of boolean type.
+
+`blob` the column is of blob type.
 
 `number` the column is of integer type.
 

@@ -16,7 +16,7 @@ const App =()=> {
      }
 
      watcher.onBulkSave = async ()=> {
-        console.log("item in the db has changed");
+        console.log("items in the db has changed");
      }
      
      return ()=> watcher.removeWatch(); 

@@ -4,8 +4,8 @@ You could encrypt data that are send to the db by specifying those to `TableBuil
 See below
 
 ```ts
-import  { IBaseModule, TableBuilder, ColumnType, IQueryResultItem } from 'expo-sqlite-wrapper'
-class User extends IBaseModule<TableNames>{
+import  { Table } from 'react-native-sqlite-orm'
+class User extends Table<TableNames>{
     name: string;
     password: string;
     constructor(){
@@ -15,8 +15,7 @@ class User extends IBaseModule<TableNames>{
     }
     
   static GetTableStructor() {
-    return TableBuilder<User, TableNames>("Users").
-    column("id").primary.autoIncrement.number.
+    return Table.TableBuilder<User, TableNames>("Users").
     column("name").
     column("password").encrypt("myscret key").
     objectPrototype(User.prototype)
@@ -44,7 +43,7 @@ To be able to search those column, you have tow diffrent ways.
 
 ### example 2
 ```ts
-  import  { encrypt, decrypt } from 'expo-sqlite-wrapper'
+  import  { encrypt, decrypt } from 'react-native-sqlite-orm'
   // manually encrypt the value and send it to the database
   var items = await dbContext.database.find("select * from Users where password = ?", [encrypt("123", "myscret key")], "Users");
 ```

@@ -7,7 +7,7 @@ That mean when you make changes to your objects and so on, You will notice those
 ```ts
 const query= dbContext.database.querySelector<Parent>("Parents");
 
-// you could load children
+// you could load children and join parentId with Id and assign the result to children
 query.LoadChildren<Child>("Childrens", "parentId", "id", "children", true);
 
 // Simple Where

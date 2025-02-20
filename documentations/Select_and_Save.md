@@ -24,7 +24,7 @@ var child = await dbContext.database.save(new Child("testName",item.id));
 ```
 
 For selecting the data you have more then one method to do that.
-You can use the normal way for which `expo.sqlite`
+You can use the normal way for which `sqlite`
 `find` will return a simple json array.
 ```ts
   var items=  (await dbContext.database.find("Select * from Parents where (name in (?,?)) OR (email like %?%)", ["name", "testName","test@" ])) as Parent[];
@@ -32,7 +32,7 @@ You can use the normal way for which `expo.sqlite`
 
 There is also another way for which you can use `querySelector` builder
 
-See [querySelector](https://github.com/AlenToma/expo-sqlite-wrapper/blob/main/documentations/querySelector.md) for more info
+See [querySelector](https://github.com/AlenToma/react-native-sqlite-orm/blob/main/documentations/querySelector.md) for more info
 ```ts
    var item = await dbContext.database.querySelector<Parent>("Parents").Where
    .Column(x=> x.name)

@@ -1,7 +1,7 @@
 # BulkSave
 When saving many data, it is best to skip some operation that `save` operation do.
 
-That is why there is a simple way `expo-sqlite-wrapper` present (`BulkSave`)
+That is why there is a simple way `react-native-sqlite-orm` present (`BulkSave`)
 
 Note: `BulkSave` will only trigger `Watchers.onBulkSave`
 ## example

@@ -3,16 +3,16 @@ It is very easy to create the `repository`, it only taks few line. See below
 
 
 ```ts
-import createDbContext, { IDatabase, IQueryResultItem, IBaseModule } from 'expo-sqlite-wrapper'
+import createDbContext, { IDatabase, IQueryResultItem, Table } from 'react-native-sqlite-orm'
 import {
-  openDatabaseAsync
-} from "expo-sqlite";
+  openDatabase
+} from "react-native-sqlite-storage";
 const tables = [Parent.GetTableStructor(), Child.GetTableStructor()]
 export default class DbContext {
   databaseName: string = "mydatabase.db";
   database: IDatabase<TableNames>;
   constructor() {
-    this.database = createDbContext<TableNames>(tables, async () => await openDatabaseAsync(this.databaseName) as any);
+    this.database = createDbContext<TableNames>(tables, async () => await openDatabase({ name: this.databaseName, location: "default" }));
   }
 }
 ```
@@ -24,7 +24,7 @@ export default class DbContext {
   database: IDatabase<TableNames>;
   constructor() {
  this.database = createDbContext<TableNames>(tables, async () => {
-      return await openDatabaseAsync(this.databaseName) as any
+      return await openDatabase({ name: this.databaseName, location: "default" })
     }, async (db) => {
       try {
         for (let sql of `
