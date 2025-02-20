@@ -100,10 +100,7 @@ class Database<D extends string>
       this.isOpen = true;
       return this.db ?? (await getDatabase());
     };
-    this.tables = databaseTables as TableBuilder<
-      any,
-      D
-    >[];
+    this.tables = databaseTables as TableBuilder<any, D>[];
   }
 
   private log(...items: any[]) {
