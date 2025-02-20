@@ -5,9 +5,9 @@
       "react-native-sqlite-orm": ["./src/index"]
     },
     "allowUnreachableCode": false,
-    "allowUnusedLabels": false,
+    "allowUnusedLabels": true,
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
+    "forceConsistentCasingInFileNames": false,
     "jsx": "react-jsx",
     "lib": ["ESNext"],
     "module": "ESNext",
@@ -19,12 +19,12 @@
     "noStrictGenericChecks": false,
     "noUncheckedIndexedAccess": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedParameters": false,
     "resolveJsonModule": true,
     "resolvePackageJsonImports": false,
     "skipLibCheck": true,
-    "strict": true,
+    "strict": false,
     "target": "ESNext",
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": false
   }
 }

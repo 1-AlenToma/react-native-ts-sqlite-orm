@@ -1,7 +1,6 @@
-import { multiply } from 'react-native-sqlite-orm';
 import { Text, View, StyleSheet } from 'react-native';
 
-const result = multiply(3, 7);
+const result = 0;
 
 export default function App() {
   return (

@@ -38,17 +38,29 @@
   ],
   "scripts": {
     "example": "yarn workspace react-native-sqlite-orm-example",
-    "test": "jest",
+    "testjest": "jest",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "clean": "del-cli lib",
     "prepare": "bob build",
-    "release": "release-it"
+    "release": "release-it",
+    "build": "tsc & npm run prepare",
+    "test": "mocha lib/commonjs/tests/test_QuerySelectorTest.js",
+    "dev": "npm run build & npm run test"
   },
   "keywords": [
+    "sql",
+    "sqlite",
+    "websql",
+    "expo.websql",
+    "web sqlite",
+    "ios sqlite",
+    "android sqlite",
+    "expo-sqlite",
+    "orm",
     "react-native",
-    "ios",
-    "android"
+    "expo",
+    "expo-sqlite-wrapper"
   ],
   "repository": {
     "type": "git",
@@ -68,19 +80,23 @@
     "@evilmartians/lefthook": "^1.5.0",
     "@react-native/eslint-config": "^0.73.1",
     "@release-it/conventional-changelog": "^9.0.2",
+    "@types/crypto-js": "^4.2.2",
     "@types/jest": "^29.5.5",
     "@types/react": "^18.2.44",
+    "@types/react-native-sqlite-storage": "^6.0.5",
     "commitlint": "^17.0.2",
     "del-cli": "^5.1.0",
     "eslint": "^8.51.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.1",
     "jest": "^29.7.0",
+    "mocha": "^11.1.0",
     "prettier": "^3.0.3",
     "react": "18.3.1",
     "react-native": "0.76.7",
     "react-native-builder-bob": "^0.36.0",
     "release-it": "^17.10.0",
+    "should": "^13.2.3",
     "typescript": "^5.2.2"
   },
   "resolutions": {
@@ -183,5 +199,9 @@
     "languages": "js",
     "type": "library",
     "version": "0.48.2"
+  },
+  "dependencies": {
+    "crypto-js": "^4.2.0",
+    "react-native-get-random-values": "^1.11.0"
   }
 }
