@@ -1,4 +1,4 @@
-import { Database, DatabaseDrive } from "react-native-sqlite-orm";
+import { Database, DatabaseDrive } from "react-native-ts-sqlite-orm";
 import { TableNames, Chapters, DetaliItems } from "./dbModols";
 import * as SQLite from 'expo-sqlite';
 

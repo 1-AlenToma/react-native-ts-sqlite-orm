@@ -32,7 +32,7 @@ You can use the normal way for which `sqlite`
 
 There is also another way for which you can use `querySelector` builder
 
-See [querySelector](https://github.com/AlenToma/react-native-sqlite-orm/blob/main/documentations/querySelector.md) for more info
+See [querySelector](https://github.com/AlenToma/react-native-ts-sqlite-orm/blob/main/documentations/querySelector.md) for more info
 ```ts
    var item = await dbContext.querySelector<Parent>("Parents").where
    .column(x=> x.name)

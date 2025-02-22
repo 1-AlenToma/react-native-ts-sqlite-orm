@@ -2,7 +2,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "paths": {
-      "react-native-sqlite-orm": ["./src/index"]
+      "react-native-ts-sqlite-orm": ["./src/index"]
     },
     "allowUnreachableCode": false,
     "allowUnusedLabels": true,

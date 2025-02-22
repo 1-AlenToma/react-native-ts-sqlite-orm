@@ -1,6 +1,6 @@
 # useQuery
 
-`react-native-sqlite-orm` have hooks that you could use in a components.
+`react-native-ts-sqlite-orm` have hooks that you could use in a components.
 
 The hook is able to tracks changes done globally, so if you change an item in the database `useQuery` will be able to track the changes and render the component.
 

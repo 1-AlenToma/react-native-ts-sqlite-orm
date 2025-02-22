@@ -4,7 +4,7 @@ The first step is to create and configure your modules.
 For this example, we will create tow `classes` `Parent` and `Child`
 
 ```ts
-import  { Table, ColumnType, IQueryResultItem } from 'react-native-sqlite-orm'
+import  { Table, ColumnType, IQueryResultItem } from 'react-native-ts-sqlite-orm'
 
 // We created `TableNames` so that it will be simpler when you are working in typescript
 export type TableNames = "Parents" | "Childrens";

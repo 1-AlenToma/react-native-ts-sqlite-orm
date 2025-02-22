@@ -1,4 +1,4 @@
-# react-native-sqlite-orm
+# react-native-ts-sqlite-orm
  This is an ORM, build around `sqlite`. It will make operation like `UPDATE`, `SELECT` AND `INSERT` a lot easier to handle
  
  ## Installations
@@ -11,19 +11,19 @@ npm install --save react-native-sqlite-storage
 ```
 
 ```sh
- npm react-native-sqlite-orm
+ npm react-native-ts-sqlite-orm
 ```
 Installation for `react-native-sqlite-storage` read [react-native-sqlite-storage](https://www.npmjs.com/package/react-native-sqlite-storage)
 
 ## Documentations
-* [Modules Setup](https://github.com/1-AlenToma/react-native-sqlite-orm/blob/main/documentations/SetupModules.md)
-* [DbContext](https://github.com/1-AlenToma/react-native-sqlite-orm/blob/main/documentations/dbContexts.md)
-* [Select and save operations](https://github.com/1-AlenToma/react-native-sqlite-orm/blob/main/documentations/Select_and_Save.md)
-* [Watch the db operations](https://github.com/1-AlenToma/react-native-sqlite-orm/blob/main/documentations/Watcher.md)
-* [BulkSave](https://github.com/1-AlenToma/react-native-sqlite-orm/blob/main/documentations/BulkSave.md)
-* [Encryptions](https://github.com/1-AlenToma/react-native-sqlite-orm/blob/main/documentations/Encryptions.md)
-* [useQuery](https://github.com/1-AlenToma/react-native-sqlite-orm/blob/main/documentations/useQuery.md)
-* [querySelector](https://github.com/1-AlenToma/react-native-sqlite-orm/blob/main/documentations/querySelector.md)
+* [Modules Setup](https://github.com/1-AlenToma/react-native-ts-sqlite-orm/blob/main/documentations/SetupModules.md)
+* [DbContext](https://github.com/1-AlenToma/react-native-ts-sqlite-orm/blob/main/documentations/dbContexts.md)
+* [Select and save operations](https://github.com/1-AlenToma/react-native-ts-sqlite-orm/blob/main/documentations/Select_and_Save.md)
+* [Watch the db operations](https://github.com/1-AlenToma/react-native-ts-sqlite-orm/blob/main/documentations/Watcher.md)
+* [BulkSave](https://github.com/1-AlenToma/react-native-ts-sqlite-orm/blob/main/documentations/BulkSave.md)
+* [Encryptions](https://github.com/1-AlenToma/react-native-ts-sqlite-orm/blob/main/documentations/Encryptions.md)
+* [useQuery](https://github.com/1-AlenToma/react-native-ts-sqlite-orm/blob/main/documentations/useQuery.md)
+* [querySelector](https://github.com/1-AlenToma/react-native-ts-sqlite-orm/blob/main/documentations/querySelector.md)
 
 
 ### IDatabase(available methods )

@@ -1,4 +1,4 @@
-import { Table } from "react-native-sqlite-orm"
+import { Table } from "react-native-ts-sqlite-orm"
 export type TableNames = 'DetaliItems' | 'Chapters';
 
 export class DetaliItems extends Table<TableNames> {

@@ -4,7 +4,7 @@ You could encrypt data that are send to the db by specifying those to `TableBuil
 See below
 
 ```ts
-import  { Table } from 'react-native-sqlite-orm'
+import  { Table } from 'react-native-ts-sqlite-orm'
 class User extends Table<TableNames>{
     name: string;
     password: string;
@@ -42,7 +42,7 @@ To be able to search those column, you have tow diffrent ways.
 
 ### example 2
 ```ts
-  import  { encrypt, decrypt } from 'react-native-sqlite-orm'
+  import  { encrypt, decrypt } from 'react-native-ts-sqlite-orm'
   // manually encrypt the value and send it to the database
   var items = await dbContext.find("select * from Users where password = ?", [encrypt("123", "myscret key")], "Users");
 ```

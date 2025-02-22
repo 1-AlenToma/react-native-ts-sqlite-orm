@@ -1,5 +1,5 @@
 {
-  "name": "react-native-sqlite-orm",
+  "name": "react-native-ts-sqlite-orm",
   "version": "0.1.0",
   "description": "an orm for react-native using sqlite database.",
   "source": "./src/index.ts",
@@ -37,7 +37,7 @@
     "!**/.*"
   ],
   "scripts": {
-    "example": "yarn workspace react-native-sqlite-orm-example",
+    "example": "yarn workspace react-native-ts-sqlite-orm-example",
     "testjest": "jest",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
@@ -64,14 +64,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/1-AlenToma/react-native-sqlite-orm.git"
+    "url": "git+https://github.com/1-AlenToma/react-native-ts-sqlite-orm.git"
   },
   "author": "1-AlenToma <alen.toma@gmail.com> (https://github.com/1-AlenToma)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/1-AlenToma/react-native-sqlite-orm/issues"
+    "url": "https://github.com/1-AlenToma/react-native-ts-sqlite-orm/issues"
   },
-  "homepage": "https://github.com/1-AlenToma/react-native-sqlite-orm#readme",
+  "homepage": "https://github.com/1-AlenToma/react-native-ts-sqlite-orm#readme",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/"
   },

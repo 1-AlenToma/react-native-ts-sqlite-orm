@@ -3,7 +3,7 @@ It is very easy to create the `repository`, it only taks few line. See below
 
 
 ```ts
-import { Database, DatabaseDrive } from "react-native-sqlite-orm";
+import { Database, DatabaseDrive } from "react-native-ts-sqlite-orm";
 import {
   openDatabase
 } from "react-native-sqlite-storage";
@@ -21,7 +21,7 @@ export default class DbContext extends Database<TableNames> {
 For `expo.sqlite`  setup
 
 ```ts
-import { Database, DatabaseDrive } from "react-native-sqlite-orm";
+import { Database, DatabaseDrive } from "react-native-ts-sqlite-orm";
 import * as SQLite from 'expo-sqlite';
 export type TableNames = "Parents" | "Childrens";
 const tables = [Parent.tb, Child.tb]
