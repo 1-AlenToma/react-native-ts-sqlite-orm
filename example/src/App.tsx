@@ -7,6 +7,11 @@ const result = 0;
 
 const dbContext = new repository();
 export default function App() {
+  const [data, loading] = dbContext.useQuery<DetaliItems>("DetaliItems",
+    dbContext.querySelector<DetaliItems>("DetaliItems")
+      .include<Chapters>("Chapters").column("id", "detaliItem_Id").toList("children")
+      .where.column(x => x.id).equalAndGreaterThen(0)
+  )
 
   React.useEffect(() => {
     (async () => {
@@ -14,26 +19,16 @@ export default function App() {
         // await dbContext.dropTables();
         await dbContext.setUpDataBase();
         await dbContext.migrateNewChanges();
-        let emptyItem = new DetaliItems();
-        emptyItem.novel = "test";
-        emptyItem.title = "tll";
-        let item = await dbContext.querySelector<DetaliItems>("DetaliItems")
-        .include<Chapters>("Chapters").column("id", "detaliItem_Id").toList("children")
-          .where.column(x => x.id).equalAndGreaterThen(0).findOrSave(emptyItem)
-
-        /*  for (let i = 0; i < 2; i++) {
-            let chap = new Chapters();
-            chap.chapterUrl = "http:" + i;
-            chap.detaliItem_Id = item.id;
-            dbContext.save(chap);
-          }
-    */
-        console.log(item)
       } catch (e) {
         console.error(e)
       }
     })();
   }, [])
+
+  React.useEffect(()=>{
+    if (!loading)
+        console.warn(data)
+  },[loading])
 
 
   return (

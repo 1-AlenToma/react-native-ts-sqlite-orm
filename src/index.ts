@@ -1,6 +1,5 @@
 import 'react-native-get-random-values';
 export * from "./sql.wrapper.types";
-import createDbContext from "./Database";
 import TableBuilder from "./TableStructor";
 import BulkSave from "./BulkSave";
 import { Functions } from "./UsefullMethods";
@@ -47,4 +46,3 @@ export type {
   ArrayIColumnSelector,
   ArrayAndAliasIColumnSelector
 };
-export default createDbContext;

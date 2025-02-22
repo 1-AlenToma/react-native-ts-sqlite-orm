@@ -19,15 +19,6 @@ import UseQuery from "./hooks/useQuery";
 import QuerySelector, { IQuerySelector, IReturnMethods } from "./QuerySelector";
 import { createQueryResultType, Functions } from "./UsefullMethods";
 
-export default function <D extends string>(
-  databaseTables: ITableBuilder<any, D>[],
-  getDatabase: () => Promise<DatabaseDrive>,
-  onInit?: (database: IDatabase<D>) => Promise<void>,
-  disableLog?: boolean
-) {
-  return new Database<D>(databaseTables, getDatabase, onInit, disableLog) as IDatabase<D>;
-}
-
 export class ORMDataBase<D extends string> implements IDatabase<D> {
   private db: IDatabase<D>;
   constructor(
@@ -38,7 +29,8 @@ export class ORMDataBase<D extends string> implements IDatabase<D> {
     this.db = new Database<D>(databaseTables, getDatabase, onInit, disableLog) as IDatabase<D>;
   }
 
-  useQuery<T extends IId<D>, D extends string>(tableName: D, query: Query | IReturnMethods<T, D> | (() => Promise<T[]>), onDbItemsChanged?: (items: T[]) => T[]) {
+  useQuery<T extends IId<D>>(tableName: D, query: Query | IReturnMethods<T, D> | (() => Promise<T[]>),
+   onDbItemsChanged?: (items: T[]) => T[]) {
     return this.db.useQuery(tableName, query, onDbItemsChanged)
   }
   disableWatchers() { return this.db.disableWatchers() };
@@ -158,7 +150,7 @@ class Database<D extends string>
 
   //#region Hooks
 
-  public useQuery<T extends IId<D>, D extends string>(
+  public useQuery<T extends IId<D>>(
     tableName: D,
     query:
       | Query

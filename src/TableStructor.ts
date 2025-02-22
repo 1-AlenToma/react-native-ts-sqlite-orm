@@ -5,8 +5,6 @@ import {
   NonFunctionPropertyNames
 } from "./sql.wrapper.types";
 
-
-
 export class TableBuilder<T, D extends string> implements ITableBuilder<T, D>{
   props: ColumnProps<T, D>[];
   constrains: {

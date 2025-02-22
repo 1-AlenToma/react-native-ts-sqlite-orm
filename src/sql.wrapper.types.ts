@@ -297,31 +297,22 @@ export type IQueryResultItem<
   ) => Promise<void>;
 };
 
-const OUseQuery = <
-  T extends IId<D>,
-  D extends string
->(
-  tableName: D,
-  query:
-    | Query
-    | IReturnMethods<T, D>
-    | (() => Promise<T[]>),
-  onDbItemsChanged?: (items: T[]) => T[]
-) =>
-  [
-    [] as IQueryResultItem<T, D>[],
-    {} as boolean,
-    new Function() as () => Promise<void>,
-    {} as IDatabase<D>
-  ] as const;
-
-export type IUseQuery = typeof OUseQuery;
 
 export interface IDatabase<D extends string> {
   /**
    * This is a hook you could use in a component
    */
-  useQuery: IUseQuery;
+  useQuery: <T extends IId<D>>(
+    tableName: D,
+    query: | Query | IReturnMethods<T, D>
+      | (() => Promise<T[]>),
+    onDbItemsChanged?: (items: T[]) => T[]
+  ) => readonly [
+    IQueryResultItem<T, D>[],
+    boolean,
+    () => Promise<void>,
+    IDatabase<D>
+  ]
 
   /**
    * Freeze all watchers, this is usefull when for example doing many changes to the db

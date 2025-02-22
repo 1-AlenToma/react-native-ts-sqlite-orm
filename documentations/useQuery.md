@@ -9,7 +9,7 @@ Here is how simple it is to use it.
 ```tsx
 const Name =()=> {
  const [users, dataIsLoading] = 
-  DbContext.useQuery("Users",
+  DbContext.useQuery<User>("Users",
   DbContext.querySelector<User>("Users").where.column(x=> x.name).startsWith("t"));
 
 return (
@@ -29,7 +29,7 @@ return (
 The TableName
 
 ### query
-Could be one of the folowing `(SqlLite.Query) | (IReturnMethods<T, D>) | (() => Promise<T[]>`
+Could be one of the folowing `(Query) | (IReturnMethods<T, D>) | (() => Promise<T[]>`
 
 The initiated data.
 
