@@ -1,6 +1,7 @@
 import Functions from "./Functions";
 import { IDataBaseExtender } from '../sql.wrapper.types'
-import QuerySelector, { Param } from '../QuerySelector'
+import QuerySelector from '../QuerySelector'
+import { Param } from "../QuerySelectorProps"
 export default class QValue {
     value?: any;
     value2?: any;

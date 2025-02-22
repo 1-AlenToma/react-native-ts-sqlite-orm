@@ -5,6 +5,7 @@ import TableBuilder from "./TableStructor";
 import BulkSave from "./BulkSave";
 import { Functions } from "./UsefullMethods";
 import Table from './Table';
+import {ORMDataBase as Database} from "./Database";
 import {
   IQuerySelector,
   IReturnMethods,
@@ -30,7 +31,8 @@ export {
   encrypt,
   decrypt,
   oDecrypt,
-  oEncypt
+  oEncypt,
+  Database
 };
 export type {
   IQuerySelector,

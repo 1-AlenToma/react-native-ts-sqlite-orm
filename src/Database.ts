@@ -17,7 +17,7 @@ import {
 import { TableBuilder } from "./TableStructor";
 import BulkSave from "./BulkSave";
 import UseQuery from "./hooks/useQuery";
-import QuerySelector, { IQuerySelector } from "./QuerySelector";
+import QuerySelector, { IQuerySelector, IReturnMethods } from "./QuerySelector";
 import { createQueryResultType, Functions } from "./UsefullMethods";
 
 export default function <D extends string>(
@@ -27,6 +27,48 @@ export default function <D extends string>(
   disableLog?: boolean
 ) {
   return new Database<D>(databaseTables, getDatabase, onInit, disableLog) as IDatabase<D>;
+}
+
+export class ORMDataBase<D extends string> implements IDatabase<D> {
+  private db: IDatabase<D>;
+  constructor(
+    databaseTables: ITableBuilder<any, D>[],
+    getDatabase: () => Promise<DatabaseDrive>,
+    onInit?: (database: IDatabase<D>) => Promise<void>,
+    disableLog?: boolean) {
+    this.db = new Database<D>(databaseTables, getDatabase, onInit, disableLog) as IDatabase<D>;
+  }
+
+  useQuery<T extends IId<D>, D extends string>(tableName: D, query: IQuery<T, D> | Query | IReturnMethods<T, D> | (() => Promise<T[]>), onDbItemsChanged?: (items: T[]) => T[]) {
+    return this.db.useQuery(tableName, query, onDbItemsChanged)
+  }
+  disableWatchers() { return this.db.disableWatchers() };
+  enableWatchers() { return this.db.enableWatchers(); }
+  disableHooks() { return this.db.disableHooks(); }
+  enableHooks() { return this.db.enableHooks(); }
+  bulkSave<T extends IBaseModule<D>>(tabelName: D) { return this.db.bulkSave(tabelName); }
+  isClosed?: boolean;
+  tryToClose() { return this.db.tryToClose(); }
+  close() { return this.db.close(); }
+  beginTransaction() { return this.db.beginTransaction(); }
+  commitTransaction() { return this.db.commitTransaction(); }
+  rollbackTransaction() { return this.db.rollbackTransaction(); }
+  startRefresher(ms: number) { return this.startRefresher(ms); }
+  allowedKeys(tableName: D) { return this.db.allowedKeys(tableName); }
+  asQueryable<T extends IId<D>>(item: IBaseModule<D> | IId<D>, tableName?: D) { return this.db.asQueryable<T>(item, tableName); }
+  watch<T extends IId<D>>(tableName: D) { return this.watch(tableName); }
+  querySelector<T extends IId<D>>(tabelName: D) { return this.db.querySelector<T>(tabelName); }
+  find(query: string, args?: any[], tableName?: D) { return this.db.find(query, args, tableName); }
+  save<T extends IId<D>>(item: T | T[], insertOnly?: Boolean, tableName?: D, saveAndForget?: boolean) { return this.db.save<T>(item, insertOnly, tableName, saveAndForget); }
+  where<T extends IId<D>>(tableName: D, query?: any | T) { return this.db.where<T>(tableName, query); }
+  delete(item: IId<D> | IId<D>[], tableName?: D) { return this.db.delete(item, tableName); }
+  execute(query: string, args?: any[]) { return this.db.execute(query, args); }
+  dropTables() { return this.db.dropTables(); }
+  setUpDataBase(forceCheck?: boolean) { return this.db.setUpDataBase(); }
+  tableHasChanges<T extends IBaseModule<D>>(item: ITableBuilder<T, D>) { return this.db.tableHasChanges<T>(item); }
+  executeRawSql(queries: Query[]) { return this.db.executeRawSql(queries); }
+  migrateNewChanges() { return this.db.migrateNewChanges(); }
+
 }
 
 const watchers: IWatcher<any, string>[] = [];
@@ -626,7 +668,7 @@ class Database<D extends string>
 
   private async getAllAsync(q: string, ...args: any[]) {
     let db = await this.dataBase();
-    let result = await db.executeSql(q, args);
+    let result = await db.executeSql("READ", q, args);
     return (result ?? []).map(x => x);
   }
 
@@ -691,13 +733,8 @@ class Database<D extends string>
     );
   }
 
-  public querySelector<T extends IId<D>>(
-    tableName: D
-  ) {
-    return new QuerySelector(
-      tableName,
-      this
-    ) as IQuerySelector<T, D>;
+  public querySelector<T extends IId<D>>(tableName: D) {
+    return new QuerySelector(tableName, this) as IQuerySelector<T, D>;
   }
 
   public async save<T extends IId<D>>(
@@ -872,16 +909,14 @@ class Database<D extends string>
     }
   }
 
-  executeRawSql = async (
-    queries: Query[]
-  ) => {
+  executeRawSql = async (queries: Query[]) => {
     try {
       this.timeStamp = new Date();
       let db = await this.dataBase();
       for (let sql of queries) {
         if (sql.args.length > 0)
-          await db.executeSql(sql.sql, sql.args);
-        else await db.executeSql(sql.sql, []);
+          await db.executeSql("WRITE", sql.sql, sql.args);
+        else await db.executeSql("WRITE", sql.sql, []);
       }
     } catch (e) {
       console.error(e);

@@ -21,13 +21,11 @@ export class Parent extends Table<TableNames>{
  }
   
   // This method will return the table setup that we will be using later on in `repository`
-  static GetTableStructor() {
-    return Table.TableBuilder<Parent, TableNames>("Parents").
+  static tb = this.TableBuilder<Parent, TableNames>("Parents").
     column("name").
     objectPrototype(Parent.prototype).
     //unique acts as an Id too as the library will chack if there exist an item with the same field value and will update instead.
     column("email").unique;
-  }
 }
 
 ```
@@ -44,8 +42,7 @@ export class Child extends Table<TableNames>{
    this.parentId = parentId;
  }
   
-  static GetTableStructor() {
-    return Table.TableBuilder<Child, TableNames>("Childrens").
+static tb = this.TableBuilder<Child, TableNames>("Childrens").
     column("someField").
     column("parentId").number.nullable.
     constrain<Parent>("parentId", "Parents", "id").
@@ -54,7 +51,6 @@ export class Child extends Table<TableNames>{
            child.id= item.id;
            return child;
     });
-  }
 }
 ```
 

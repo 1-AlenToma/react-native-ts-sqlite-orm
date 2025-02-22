@@ -9,8 +9,8 @@ Here is how simple it is to use it.
 ```tsx
 const Name =()=> {
  const [users, dataIsLoading] = 
-  DbContext.database.useQuery("Users",
-  DbContext.database.querySelector<User>("Users").Where.Column(x=> x.name).StartsWith("t"));
+  DbContext.useQuery("Users",
+  DbContext.querySelector<User>("Users").where.column(x=> x.name).startsWith("t"));
 
 return (
     <>

@@ -1,33 +1,10 @@
-# Setup dbContexts
-It is very easy to create the `repository`, it only taks few line. See below
-
-
-```ts
 import { Database, DatabaseDrive } from "react-native-sqlite-orm";
-import {
-  openDatabase
-} from "react-native-sqlite-storage";
-export type TableNames = "Parents" | "Childrens";
-const tables = [Parent.tb, Child.tb]
-export default class DbContext extends Database<TableNames> {
-    constructor() {
-        super(tables, async () => {
-            let db = await openDatabase("test.db");
-            return db;
-        });
-    }
-}
-```
-For `expo.sqlite`  setup
-
-```ts
-import { Database, DatabaseDrive } from "react-native-sqlite-orm";
+import { TableNames, Chapters, DetaliItems } from "./dbModols";
 import * as SQLite from 'expo-sqlite';
-export type TableNames = "Parents" | "Childrens";
-const tables = [Parent.tb, Child.tb]
-export default class DbContext extends Database<TableNames> {
+
+export default class repository extends Database<TableNames> {
     constructor() {
-        super(tables, async () => {
+        super([DetaliItems.tb, Chapters.tb], async () => {
             let db = await SQLite.openDatabaseAsync("test.db");
             let driver: DatabaseDrive = {
                 close: async () => await db.closeAsync(),
@@ -46,6 +23,3 @@ export default class DbContext extends Database<TableNames> {
         });
     }
 }
-
-```
-

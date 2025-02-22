@@ -2,7 +2,7 @@
   "name": "react-native-sqlite-orm",
   "version": "0.1.0",
   "description": "an orm for react-native using sqlite database.",
-  "source": "./src/index.tsx",
+  "source": "./src/index.ts",
   "main": "./lib/commonjs/index.js",
   "module": "./lib/module/index.js",
   "exports": {
@@ -83,7 +83,6 @@
     "@types/crypto-js": "^4.2.2",
     "@types/jest": "^29.5.5",
     "@types/react": "^18.2.44",
-    "@types/react-native-sqlite-storage": "^6.0.5",
     "commitlint": "^17.0.2",
     "del-cli": "^5.1.0",
     "eslint": "^8.51.0",
@@ -182,7 +181,7 @@
       ],
       [
         "module",
-        {
+        { 
           "esm": true
         }
       ],

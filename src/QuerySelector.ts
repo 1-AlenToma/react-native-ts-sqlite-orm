@@ -3,7 +3,7 @@ import {
   IDataBaseExtender,
   IQueryResultItem,
   IId,
-  Query,
+  GlobalIQuerySelector,
   IBaseModule,
   IChildLoader,
   NonFunctionPropertyNames
@@ -14,6 +14,7 @@ import {
   Functions,
   QValue
 } from "./UsefullMethods";
+import { Param } from "./QuerySelectorProps"
 
 export type IColumnSelector<T> = (x: T) => any;
 export type ArrayIColumnSelector<T> = (
@@ -48,52 +49,6 @@ export type ConcatSeperatorChar =
   | "+"
   | "-";
 
-export enum Param {
-  StartParameter = "#(",
-  EqualTo = "#=",
-  EndParameter = "#)",
-  OR = "#OR",
-  AND = "#AND",
-  LessThan = "#<",
-  GreaterThan = "#>",
-  IN = "#IN(",
-  Not = "#NOT",
-  NULL = "#IS NULL",
-  NotNULL = "#IS NOT NULL",
-  NotEqualTo = "#!=",
-  Contains = "C#like",
-  StartWith = "S#like",
-  EndWith = "E#like",
-  EqualAndGreaterThen = "#>=",
-  EqualAndLessThen = "#<=",
-  OrderByDesc = "#Order By #C DESC",
-  OrderByAsc = "#Order By #C ASC",
-  Limit = "#Limit #Counter",
-  GroupBy = "#GROUP BY",
-  InnerJoin = "#INNER JOIN",
-  LeftJoin = "#LEFT JOIN",
-  RightJoin = "#RIGHT JOIN",
-  CrossJoin = "#CROSS JOIN",
-  Join = "#JOIN",
-  Max = "#MAX",
-  Min = "#MIN",
-  Count = "#COUNT",
-  Sum = "#SUM",
-  Total = "#Total",
-  GroupConcat = "#GroupConcat",
-  Avg = "#AVG",
-  Between = "#BETWEEN",
-  Value = "#Value",
-  Concat = "#Concat",
-  Union = "#UNION",
-  UnionAll = "#UNION ALL",
-  Case = "#CASE",
-  When = "#WHEN",
-  Then = "#THEN",
-  Else = "#ELSE",
-  EndCase = "#END"
-}
-
 export declare type SingleValue =
   | string
   | number
@@ -111,34 +66,15 @@ export declare type StringValue =
   | string
   | undefined;
 
-export type GlobalIQuerySelector<
-  T,
-  D extends string
-> = {
-  /**
-   * get the translated sql
-   */
-  getSql: (
-    sqlType: "DELETE" | "SELECT"
-  ) => Query;
 
-  getInnerSelectSql: () => string;
-};
 
-export interface IReturnMethods<
-  T,
-  D extends string
-> extends GlobalIQuerySelector<T, D> {
-  firstOrDefault: () => Promise<
-    IQueryResultItem<T, D> | undefined
-  >;
+export interface IReturnMethods<T, D extends string> extends GlobalIQuerySelector<T, D> {
+  firstOrDefault: () => Promise<IQueryResultItem<T, D> | undefined>;
   toList: () => Promise<IQueryResultItem<T, D>[]>;
-  findOrSave: (
-    item: T & IBaseModule<D>
-  ) => Promise<IQueryResultItem<T, D>>;
+  findOrSave: (item: T & IBaseModule<D>) => Promise<IQueryResultItem<T, D>>;
   /**
-   * delete based on Query above.
-   */
+  * delete based on Query above.
+  */
   delete: () => Promise<void>;
 }
 
@@ -146,7 +82,7 @@ export interface IOrderBy<T, ReturnType> {
   /**
    * OrderByDesc COLUMN OR COLUMNS
    */
-  OrderByDesc: (
+  orderByDesc: (
     columnName:
       | IColumnSelector<T>
       | ArrayIColumnSelector<T>
@@ -154,7 +90,7 @@ export interface IOrderBy<T, ReturnType> {
   /**
    * OrderByAsc COLUMN OR COLUMNS
    */
-  OrderByAsc: (
+  orderByAsc: (
     columnName:
       | IColumnSelector<T>
       | ArrayIColumnSelector<T>
@@ -162,11 +98,11 @@ export interface IOrderBy<T, ReturnType> {
   /**
    * Limit the rows
    */
-  Limit: (value: number) => ReturnType;
+  limit: (value: number) => ReturnType;
   /**
    * GroupBy column or columns
    */
-  GroupBy: (
+  groupBy: (
     columnName:
       | IColumnSelector<T>
       | ArrayIColumnSelector<T>
@@ -183,13 +119,13 @@ export interface GenericQuery<
   /**
    * Select based on Column
    */
-  Column: (
+  column: (
     column: IColumnSelector<T>
   ) => ReturnType;
   /**
    * Bring togather columns and values, seperated by ConcatSeperatorChar
    */
-  Concat: (
+  concat: (
     collectCharacters_type: ConcatSeperatorChar,
     ...columnOrValues: (
       | IColumnSelector<T>
@@ -199,14 +135,14 @@ export interface GenericQuery<
   /**
    * Add BETWEEN
    */
-  Between(
+  between(
     value1: SingleValue | IColumnSelector<T>,
     value2: SingleValue | IColumnSelector<T>
   ): ReturnType;
   /**
    * EqualTo based on value or column from a table
    */
-  EqualTo: (
+  equalTo: (
     value:
       | SingleValue
       | IColumnSelector<T>
@@ -215,25 +151,25 @@ export interface GenericQuery<
   /**
    * Contains based on value or column from a table
    */
-  Contains: (
+  contains: (
     value: StringValue | IColumnSelector<T>
   ) => ReturnType;
   /**
    * StartsWith based on value or column from a table
    */
-  StartsWith: (
+  startsWith: (
     value: StringValue | IColumnSelector<T>
   ) => ReturnType;
   /**
    * EndsWith based on value or column from a table
    */
-  EndsWith: (
+  endsWith: (
     value: StringValue | IColumnSelector<T>
   ) => ReturnType;
   /**
    * NotEqualTo based on value or column from a table
    */
-  NotEqualTo: (
+  notEqualTo: (
     value:
       | SingleValue
       | IColumnSelector<T>
@@ -242,7 +178,7 @@ export interface GenericQuery<
   /**
    * EqualAndGreaterThen based on value or column from a table
    */
-  EqualAndGreaterThen: (
+  equalAndGreaterThen: (
     value:
       | NumberValue
       | StringValue
@@ -252,7 +188,7 @@ export interface GenericQuery<
   /**
    * EqualAndLessThen based on value or column from a table
    */
-  EqualAndLessThen: (
+  equalAndLessThen: (
     value:
       | NumberValue
       | StringValue
@@ -262,23 +198,23 @@ export interface GenericQuery<
   /**
    * Add (
    */
-  Start: ReturnType;
+  start: ReturnType;
   /**
    * Add )
    */
-  End: ReturnType;
+  end: ReturnType;
   /**
    * Add OR
    */
-  OR: ReturnType;
+  or: ReturnType;
   /**
    * Add AND
    */
-  AND: ReturnType;
+  and: ReturnType;
   /**
    * GreaterThan based on value or column from a table
    */
-  GreaterThan: (
+  greaterThan: (
     value:
       | NumberValue
       | StringValue
@@ -288,7 +224,7 @@ export interface GenericQuery<
   /**
    * LessThan based on value or column from a table
    */
-  LessThan: (
+  lessThan: (
     value:
       | NumberValue
       | StringValue
@@ -298,7 +234,7 @@ export interface GenericQuery<
   /**
    * IN based on array Value or column from a table
    */
-  IN: (
+  in: (
     value:
       | ArrayValue
       | IColumnSelector<T>
@@ -307,60 +243,59 @@ export interface GenericQuery<
   /**
    * Add NOT
    */
-  Not: ReturnType;
+  not: ReturnType;
   /**
    * Add IS NULL
    */
-  Null: ReturnType;
+  null: ReturnType;
   /**
    * Add IS NOT NULL
    */
-  NotNull: ReturnType;
+  notNull: ReturnType;
   /**
    * select columns and aggregators
    */
-  Select: IQueryColumnSelector<T, ParentType, D>;
+  select: IQueryColumnSelector<T, ParentType, D>;
   /**
    * Add Union Select
    */
-  Union: <B extends IId<D>>(
+  union: <B extends IId<D>>(
     ...queryselectors: IUnionSelector<B, D>[]
   ) => ReturnType;
   /**
    * Add UnionAll Select
    */
-  UnionAll: <B extends IId<D>>(
+  unionAll: <B extends IId<D>>(
     ...queryselectors: IUnionSelector<B, D>[]
   ) => ReturnType;
   /**
    * start case
    */
-  Case: GenericQueryWithValue<ReturnType> &
+  case: GenericQueryWithValue<ReturnType> &
   ReturnType;
   /**
    * add When, work with case
    */
-  When: GenericQueryWithValue<ReturnType> &
+  when: GenericQueryWithValue<ReturnType> &
   ReturnType;
   /**
    * add Then, work with case
    */
-  Then: GenericQueryWithValue<ReturnType> &
-  ReturnType;
+  then: GenericQueryWithValue<ReturnType> & ReturnType;
   /**
    * add Else, work with case
    */
-  Else: GenericQueryWithValue<ReturnType> &
+  else: GenericQueryWithValue<ReturnType> &
   ReturnType;
   /**
    * end case, work with case
    */
-  EndCase: GenericQueryWithValue<ReturnType> &
+  endCase: GenericQueryWithValue<ReturnType> &
   ReturnType;
   /**
    * Load Child or children
    */
-  LoadChildren: <B extends IId<D>>(
+  loadChildren: <B extends IId<D>>(
     child: D,
     childColumn: NonFunctionPropertyNames<B>,
     parentColumn: NonFunctionPropertyNames<ParentType>,
@@ -373,7 +308,7 @@ export type GenericQueryWithValue<ReturnType> = {
   /**
    * Add simple Value, work best with case and else
    */
-  Value: (value: SingleValue) => ReturnType;
+  value: (value: SingleValue) => ReturnType;
 };
 
 export interface ISelectCase<
@@ -387,23 +322,22 @@ export interface ISelectCase<
     D,
     ISelectCase<T, ParentType, D>
   >,
-  | "EndCase"
+  | "endCase"
   | "getSql"
   | "getInnerSelectSql"
-  | "Select"
-  | "OrderByDesc"
-  | "OrderByAsc"
-  | "Limit"
-  | "Union"
-  | "UnionAll"
-  | "GroupBy"
-  | "Select"
+  | "select"
+  | "orderByDesc"
+  | "orderByAsc"
+  | "limit"
+  | "union"
+  | "unionAll"
+  | "groupBy"
   | "toList"
   | "firstOrDefault"
   | "findOrSave"
   | "delete"
 > {
-  EndCase: IQueryColumnSelector<T, ParentType, D>;
+  endCase: IQueryColumnSelector<T, ParentType, D>;
 }
 
 export interface IJoinOn<
@@ -417,8 +351,8 @@ export interface IJoinOn<
     D,
     IJoinOn<T, ParentType, D>
   >,
-  | "GroupBy"
-  | "Select"
+  | "groupBy"
+  | "select"
   | "toList"
   | "firstOrDefault"
   | "findOrSave"
@@ -428,7 +362,7 @@ export interface IJoinOn<
    * Inner join a table
    * eg InnerJoin<TableB, "b">("TableB", "b").Column(x=> x.a.id).EqualTo(x=> x.b.parentId)...
    */
-  InnerJoin: <B, S extends string>(
+  innerJoin: <B, S extends string>(
     tableName: D,
     alias: S
   ) => IJoinOn<T & R<B, S>, ParentType, D>;
@@ -436,7 +370,7 @@ export interface IJoinOn<
    * left join a table
    * eg LeftJoin<TableB, "b">("TableB", "b").Column(x=> x.a.id).EqualTo(x=> x.b.parentId)...
    */
-  LeftJoin: <B, S extends string>(
+  leftJoin: <B, S extends string>(
     tableName: D,
     alias: S
   ) => IJoinOn<T & R<B, S>, ParentType, D>;
@@ -445,7 +379,7 @@ export interface IJoinOn<
    * eg Join<TableB, "b">("TableB", "b").Column(x=> x.a.id).EqualTo(x=> x.b.parentId)...
    * This will overwrite the above where, so use the Where that is returned by Join method instead
    */
-  Join: <B, S extends string>(
+  join: <B, S extends string>(
     tableName: D,
     alias: S
   ) => IJoinOn<T & R<B, S>, ParentType, D>;
@@ -454,7 +388,7 @@ export interface IJoinOn<
    * eg CrossJoin<TableB, "b">("TableB", "b").Column(x=> x.a.id).EqualTo(x=> x.b.parentId)...
    * This will overwrite the above where, so use the Where that is returned by CrossJoin method instead
    */
-  CrossJoin: <B, S extends string>(
+  crossJoin: <B, S extends string>(
     tableName: D,
     alias: S
   ) => IJoinOn<T & R<B, S>, ParentType, D>;
@@ -464,88 +398,51 @@ export interface IJoinOn<
    * sqlite dose not currently support this
    */
   //RightJoin: <B, S extends string>(tableName: D, alias: S) => JoinOn<T & R<B, S>, ParentType, D>;
-  Where: IWhere<T, ParentType, D>;
+  where: IWhere<T, ParentType, D>;
 }
 
-export type IWhere<
-  T,
-  ParentType,
-  D extends string
-> = {
+
+
+export type IWhere<T, ParentType, D extends string> = {
   /**
    * incase you join data, then you will need to cast or convert the result to other type
    */
-  Cast: <B>(
-    converter?: (x: ParentType | unknown) => B
-  ) => IReturnMethods<B, D>;
-} & GenericQuery<
-  T,
-  ParentType,
-  D,
-  IWhere<T, ParentType, D>
->;
+  cast: <B>(converter?: (x: ParentType | unknown) => B) => IReturnMethods<B, D>;
+} & GenericQuery<T, ParentType, D, IWhere<T, ParentType, D>>;
 
-export interface IHaving<
-  T,
-  ParentType,
-  D extends string
-> extends Omit<
-  GenericQuery<
-    T,
-    ParentType,
-    D,
-    IHaving<T, ParentType, D>
-  >,
-  "Select" | "Column"
-> {
-  Column: (
-    columnOrAlias: IColumnSelector<T> | string
-  ) => IHaving<T, ParentType, D>;
+
+export interface IHaving<T, ParentType, D extends string> extends Omit<GenericQuery<T, ParentType, D, IHaving<T, ParentType, D>>, "select" | "column"> {
+  column: (columnOrAlias: IColumnSelector<T> | string) => IHaving<T, ParentType, D>;
   /**
    * incase you join data, then you will need to cast or convert the result to other type
    */
-  Cast: <B>(
-    converter?: (x: ParentType | unknown) => B
-  ) => IReturnMethods<B, D>;
+  cast: <B>(converter?: (x: ParentType | unknown) => B) => IReturnMethods<B, D>;
 }
 
-export interface IQuerySelector<
-  T,
-  D extends string
-> extends IReturnMethods<T, D>,
-  Omit<
-    IOrderBy<T, IQuerySelector<T, D>>,
-    "GroupBy"
-  > {
+export interface IQuerySelector<T, D extends string> extends IReturnMethods<T, D>, Omit<IOrderBy<T, IQuerySelector<T, D>>, "groupBy"> {
   /**
    * Inner join a table
    * eg InnerJoin<TableB, "b">("TableB", "b").Column(x=> x.a.id).EqualTo(x=> x.b.parentId)...
    */
-  Where: IWhere<T, T, D>;
+  where: IWhere<T, T, D>;
   /**
    * Inner join a table
    * eg InnerJoin<TableB, "b">("TableB", "b").Column(x=> x.a.id).EqualTo(x=> x.b.parentId)...
    * This will overwrite the above where, so use the Where that is returned by InnerJoin method instead
    */
-  InnerJoin: <B, S extends string>(
-    tableName: D,
-    alias: S
-  ) => IJoinOn<R<T, "a"> & R<B, S>, T, D>;
+  innerJoin: <B, S extends string>(tableName: D, alias: S) => IJoinOn<R<T, "a"> & R<B, S>, T, D>;
   /**
    * left join a table
    * eg LeftJoin<TableB, "b">("TableB", "b").Column(x=> x.a.id).EqualTo(x=> x.b.parentId)...
    * This will overwrite the above where, so use the Where that is returned by LeftJoin method instead
    */
-  LeftJoin: <B, S extends string>(
-    tableName: D,
-    alias: S
-  ) => IJoinOn<R<T, "a"> & R<B, S>, T, D>;
+  leftJoin: <B, S extends string>(tableName: D, alias: S) => IJoinOn<R<T, "a"> & R<B, S>, T, D>;
   /**
    * join a table
    * eg Join<TableB, "b">("TableB", "b").Column(x=> x.a.id).EqualTo(x=> x.b.parentId)...
    * This will overwrite the above where, so use the Where that is returned by Join method instead
    */
-  Join: <B, S extends string>(
+  join: <B, S extends string>(
     tableName: D,
     alias: S
   ) => IJoinOn<R<T, "a"> & R<B, S>, T, D>;
@@ -554,103 +451,75 @@ export interface IQuerySelector<
    * eg CrossJoin<TableB, "b">("TableB", "b").Column(x=> x.a.id).EqualTo(x=> x.b.parentId)...
    * This will overwrite the above where, so use the Where that is returned by CrossJoin method instead
    */
-  CrossJoin: <B, S extends string>(
+  crossJoin: <B, S extends string>(
     tableName: D,
     alias: S
   ) => IJoinOn<R<T, "a"> & R<B, S>, T, D>;
   /**
    * Add Union Select
    */
-  Union: <B extends IId<D>>(
+  union: <B extends IId<D>>(
     ...queryselectors: IUnionSelector<B, D>[]
   ) => IQuerySelector<T, D>;
   /**
    * Add UnionAll Select
    */
-  UnionAll: <B extends IId<D>>(
+  unionAll: <B extends IId<D>>(
     ...queryselectors: IUnionSelector<B, D>[]
   ) => IQuerySelector<T, D>;
   /**
    * Load Child or children
    */
-  LoadChildren: <B extends IId<D>>(
+  loadChildren: <B extends IId<D>>(
     child: D,
     childColumn: NonFunctionPropertyNames<B>,
     parentColumn: NonFunctionPropertyNames<T>,
     assignTo: NonFunctionPropertyNames<T>,
     isArray?: boolean
   ) => IQuerySelector<T, D>;
-  Select: IQueryColumnSelector<T, T, D>;
+
+  select: IQueryColumnSelector<T, T, D>;
+
 }
 
-export interface IQueryColumnSelector<
-  T,
-  ParentType,
-  D extends string
-> extends IReturnMethods<ParentType, D> {
+export interface IQueryColumnSelector<T, ParentType, D extends string> extends IReturnMethods<ParentType, D> {
   /**
    * start a case, and end it with CaseEnd()
    */
-  Case: (
-    alias: string
-  ) => ISelectCase<T, ParentType, D>;
+  case: (alias: string) => ISelectCase<T, ParentType, D>;
   /**
    * Default is select * from
    * you can specify the columns here
    */
-  Columns: (
-    columns: ArrayAndAliasIColumnSelector<T>
-  ) => IQueryColumnSelector<T, ParentType, D>;
+  columns: (columns: ArrayAndAliasIColumnSelector<T>) => IQueryColumnSelector<T, ParentType, D>;
   /**
    * sqlite aggrigator from Max
    */
-  Max: (
-    columns: IColumnSelector<T>,
-    alias: string
-  ) => IQueryColumnSelector<T, ParentType, D>;
+  max: (columns: IColumnSelector<T>, alias: string) => IQueryColumnSelector<T, ParentType, D>;
   /**
    * sqlite aggrigator from Min
    */
-  Min: (
-    columns: IColumnSelector<T>,
-    alias: string
-  ) => IQueryColumnSelector<T, ParentType, D>;
+  min: (columns: IColumnSelector<T>, alias: string) => IQueryColumnSelector<T, ParentType, D>;
   /**
    * sqlite aggrigator from Count
    */
-  Count: (
-    columns: IColumnSelector<T>,
-    alias: string
-  ) => IQueryColumnSelector<T, ParentType, D>;
+  count: (columns: IColumnSelector<T>, alias: string) => IQueryColumnSelector<T, ParentType, D>;
   /**
    * sqlite aggrigator from Sum
    */
-  Sum: (
-    columns: IColumnSelector<T>,
-    alias: string
-  ) => IQueryColumnSelector<T, ParentType, D>;
+  sum: (columns: IColumnSelector<T>, alias: string) => IQueryColumnSelector<T, ParentType, D>;
   /**
    * sqlite aggrigator from Total
    */
-  Total: (
-    columns: IColumnSelector<T>,
-    alias: string
-  ) => IQueryColumnSelector<T, ParentType, D>;
+  total: (columns: IColumnSelector<T>, alias: string) => IQueryColumnSelector<T, ParentType, D>;
   /**
    * sqlite concat columns and values eg lastname || ' ' || firstName as FullName;
    */
-  Concat: (
-    alias: string,
-    collectCharacters_type: ConcatSeperatorChar,
-    ...columnOrValues: (
-      | IColumnSelector<T>
-      | string
-    )[]
-  ) => IQueryColumnSelector<T, ParentType, D>;
+  concat: (alias: string, collectCharacters_type: ConcatSeperatorChar, ...columnOrValues: (IColumnSelector<T> | string)[]) => IQueryColumnSelector<T, ParentType, D>;
   /**
    * sqlite aggrigator from group_concat
    */
-  GroupConcat: (
+  groupConcat: (
     columns: IColumnSelector<T>,
     alias: string,
     seperator?: string
@@ -658,7 +527,7 @@ export interface IQueryColumnSelector<
   /**
    * sqlite aggrigator from Avg
    */
-  Avg: (
+  avg: (
     columns: IColumnSelector<T>,
     alias: string
   ) => IQueryColumnSelector<T, ParentType, D>;
@@ -666,17 +535,16 @@ export interface IQueryColumnSelector<
   /**
    * incase you join data, then you will need to cast or convert the result to other type
    */
-  Cast: <B>(
+  cast: <B>(
     converter?: (x: T | unknown) => B
   ) => IReturnMethods<B, D>;
   /**
    * add having search
    */
-  Having: IHaving<T, ParentType, D>;
+  having: IHaving<T, ParentType, D>;
 }
 
-class ReturnMethods<
-  T,
+class ReturnMethods<T,
   ParentType extends IId<D>,
   D extends string
 > {
@@ -724,15 +592,15 @@ class QueryColumnSelector<
   ParentType extends IId<D>,
   D extends string
 > extends ReturnMethods<T, ParentType, D> {
-  columns: QValue[];
+  _columns: QValue[];
   cases: ISelectCase<T, ParentType, D>[];
   constructor(parent: QuerySelector<any, D>) {
     super(parent);
-    this.columns = [];
+    this._columns = [];
     this.cases = [];
   }
 
-  Case(alias: string) {
+  case(alias: string) {
     const caseItems = new Where<T, ParentType, D>(
       this.parent.tableName,
       this.parent,
@@ -755,22 +623,22 @@ class QueryColumnSelector<
     >;
   }
 
-  Cast<B>(
+  cast<B>(
     converter: (x: ParentType | unknown) => B
   ) {
     this.parent.converter = converter;
     return this as IReturnMethods<ParentType, D>;
   }
 
-  Columns(
+  columns(
     columns: ArrayAndAliasIColumnSelector<T>
   ) {
     this.parent.clear();
-    this.columns.push(QValue.Q.Value(columns));
+    this._columns.push(QValue.Q.Value(columns));
     return this;
   }
 
-  Concat(
+  concat(
     alias: string,
     collectCharacters_type: ConcatSeperatorChar,
     ...columnOrValues: (
@@ -779,7 +647,7 @@ class QueryColumnSelector<
     )[]
   ) {
     this.parent.clear();
-    this.columns.push(
+    this._columns.push(
       QValue.Q.Value(columnOrValues)
         .Args(Param.Concat)
         .Value2(collectCharacters_type)
@@ -788,12 +656,12 @@ class QueryColumnSelector<
     return this;
   }
 
-  Max(
+  max(
     columns: IColumnSelector<T>,
     alias: string
   ) {
     this.parent.clear();
-    this.columns.push(
+    this._columns.push(
       QValue.Q.Value(columns)
         .Args(Param.Max)
         .Alias(alias)
@@ -801,12 +669,12 @@ class QueryColumnSelector<
     return this;
   }
 
-  Min(
+  min(
     columns: IColumnSelector<T>,
     alias: string
   ) {
     this.parent.clear();
-    this.columns.push(
+    this._columns.push(
       QValue.Q.Value(columns)
         .Args(Param.Min)
         .Alias(alias)
@@ -814,12 +682,12 @@ class QueryColumnSelector<
     return this;
   }
 
-  Count(
+  count(
     columns: IColumnSelector<T>,
     alias: string
   ) {
     this.parent.clear();
-    this.columns.push(
+    this._columns.push(
       QValue.Q.Value(columns)
         .Args(Param.Count)
         .Alias(alias)
@@ -827,12 +695,12 @@ class QueryColumnSelector<
     return this;
   }
 
-  Sum(
+  sum(
     columns: IColumnSelector<T>,
     alias: string
   ) {
     this.parent.clear();
-    this.columns.push(
+    this._columns.push(
       QValue.Q.Value(columns)
         .Args(Param.Sum)
         .Alias(alias)
@@ -840,12 +708,12 @@ class QueryColumnSelector<
     return this;
   }
 
-  Total(
+  total(
     columns: IColumnSelector<T>,
     alias: string
   ) {
     this.parent.clear();
-    this.columns.push(
+    this._columns.push(
       QValue.Q.Value(columns)
         .Args(Param.Total)
         .Alias(alias)
@@ -853,13 +721,13 @@ class QueryColumnSelector<
     return this;
   }
 
-  GroupConcat(
+  groupConcat(
     columns: IColumnSelector<T>,
     alias: string,
     seperator?: string
   ) {
     this.parent.clear();
-    this.columns.push(
+    this._columns.push(
       QValue.Q.Value(columns)
         .Args(Param.GroupConcat)
         .Alias(alias)
@@ -868,12 +736,12 @@ class QueryColumnSelector<
     return this;
   }
 
-  Avg(
+  avg(
     columns: IColumnSelector<T>,
     alias: string
   ) {
     this.parent.clear();
-    this.columns.push(
+    this._columns.push(
       QValue.Q.Value(columns)
         .Args(Param.Avg)
         .Alias(alias)
@@ -881,7 +749,7 @@ class QueryColumnSelector<
     return this;
   }
 
-  get Having() {
+  get having() {
     this.parent.clear();
     this.parent.having = new Where<
       T,
@@ -896,11 +764,7 @@ class QueryColumnSelector<
   }
 }
 
-export class Where<
-  T,
-  ParentType extends IId<D>,
-  D extends string
-> extends ReturnMethods<T, ParentType, D> {
+export class Where<T, ParentType extends IId<D>, D extends string> extends ReturnMethods<T, ParentType, D> {
   tableName: D;
   alias?: string;
   Queries: QValue[];
@@ -919,7 +783,7 @@ export class Where<
     this.alias = alias;
   }
 
-  LoadChildren<B extends IId<D>>(
+  loadChildren<B extends IId<D>>(
     child: D,
     childColumn: NonFunctionPropertyNames<B>,
     parentColumn: NonFunctionPropertyNames<ParentType>,
@@ -937,41 +801,41 @@ export class Where<
     return this;
   }
 
-  get Case() {
+  get case() {
     this.Queries.push(QValue.Q.Args(Param.Case));
     return this;
   }
 
-  get When() {
+  get when() {
     this.Queries.push(QValue.Q.Args(Param.When));
     return this;
   }
 
-  get Then() {
+  get then() {
     this.Queries.push(QValue.Q.Args(Param.Then));
     return this;
   }
 
-  get EndCase() {
+  get endCase() {
     this.Queries.push(
       QValue.Q.Args(Param.EndCase)
     );
     return this;
   }
 
-  get Else() {
+  get else() {
     this.Queries.push(QValue.Q.Args(Param.Else));
     return this;
   }
 
-  Value(value: SingleValue) {
+  value(value: SingleValue) {
     this.Queries.push(
       QValue.Q.Args(Param.Value).Value(value)
     );
     return this;
   }
 
-  Between(
+  between(
     value1: SingleValue | IColumnSelector<T>,
     value2: SingleValue | IColumnSelector<T>
   ) {
@@ -983,7 +847,7 @@ export class Where<
       this.Queries.push(
         QValue.Q.Args(Param.Value).Value(value1)
       );
-      this.AND;
+      this.and;
       this.Queries.push(
         QValue.Q.Args(Param.Value).Value(value2)
       );
@@ -991,14 +855,14 @@ export class Where<
     return this;
   }
 
-  Cast<B>(
+  cast<B>(
     converter: (x: ParentType | unknown) => B
   ) {
     this.parent.converter = converter;
     return this as IReturnMethods<ParentType, D>;
   }
 
-  get Select() {
+  get select() {
     this.parent.queryColumnSelector =
       new QueryColumnSelector<T, ParentType, D>(
         this.parent
@@ -1006,7 +870,7 @@ export class Where<
     return this.parent.queryColumnSelector;
   }
 
-  Column(column: IColumnSelector<T> | string) {
+  column(column: IColumnSelector<T> | string) {
     this.parent.clear();
     this.Queries.push(
       QValue.Q.Value(column).IsColumn(true)
@@ -1014,7 +878,7 @@ export class Where<
     return this;
   }
 
-  Concat(
+  concat(
     collectCharacters_type: ConcatSeperatorChar,
     ...columnOrValues: (
       | IColumnSelector<T>
@@ -1030,7 +894,7 @@ export class Where<
     return this;
   }
 
-  EqualTo(
+  equalTo(
     value:
       | SingleValue
       | IColumnSelector<T>
@@ -1044,7 +908,7 @@ export class Where<
     return this;
   }
 
-  NotEqualTo(
+  notEqualTo(
     value:
       | SingleValue
       | IColumnSelector<T>
@@ -1060,7 +924,7 @@ export class Where<
     return this;
   }
 
-  EqualAndGreaterThen(
+  equalAndGreaterThen(
     value: NumberValue | StringValue | InnerSelect
   ) {
     this.parent.clear();
@@ -1074,7 +938,7 @@ export class Where<
     return this;
   }
 
-  EqualAndLessThen(
+  equalAndLessThen(
     value:
       | NumberValue
       | StringValue
@@ -1091,7 +955,7 @@ export class Where<
     return this;
   }
 
-  get Start() {
+  get start() {
     this.parent.clear();
     this.Queries.push(
       QValue.Q.Args(Param.StartParameter)
@@ -1099,7 +963,7 @@ export class Where<
     return this;
   }
 
-  get End() {
+  get end() {
     this.parent.clear();
     if (this.Queries.length > 0)
       this.Queries.push(
@@ -1108,21 +972,21 @@ export class Where<
     return this;
   }
 
-  get OR() {
+  get or() {
     this.parent.clear();
     if (this.Queries.length > 0)
       this.Queries.push(QValue.Q.Args(Param.OR));
     return this;
   }
 
-  get AND() {
+  get and() {
     this.parent.clear();
     if (this.Queries.length > 0)
       this.Queries.push(QValue.Q.Args(Param.AND));
     return this;
   }
 
-  GreaterThan(
+  greaterThan(
     value:
       | NumberValue
       | StringValue
@@ -1139,9 +1003,9 @@ export class Where<
     return this;
   }
 
-  LessThan(
+  lessThan(
     value:
-      | NumberValue
+      NumberValue
       | StringValue
       | IColumnSelector<T>
       | InnerSelect
@@ -1154,12 +1018,7 @@ export class Where<
     return this;
   }
 
-  IN(
-    value:
-      | ArrayValue
-      | IColumnSelector<T>
-      | InnerSelect
-  ) {
+  in(value: ArrayValue | IColumnSelector<T> | InnerSelect) {
     this.parent.clear();
     if (this.Queries.length > 0)
       this.Queries.push(
@@ -1168,14 +1027,14 @@ export class Where<
     return this;
   }
 
-  get Not() {
+  get not() {
     this.parent.clear();
     if (this.Queries.length > 0)
       this.Queries.push(QValue.Q.Args(Param.Not));
     return this;
   }
 
-  get Null() {
+  get null() {
     this.parent.clear();
     if (this.Queries.length > 0)
       this.Queries.push(
@@ -1184,7 +1043,7 @@ export class Where<
     return this;
   }
 
-  get NotNull() {
+  get notNull() {
     this.parent.clear();
     if (this.Queries.length > 0)
       this.Queries.push(
@@ -1193,7 +1052,7 @@ export class Where<
     return this;
   }
 
-  Contains(
+  contains(
     value: StringValue | IColumnSelector<T>
   ) {
     this.parent.clear();
@@ -1204,7 +1063,7 @@ export class Where<
     return this;
   }
 
-  StartsWith(
+  startsWith(
     value: StringValue | IColumnSelector<T>
   ) {
     this.parent.clear();
@@ -1217,7 +1076,7 @@ export class Where<
     return this;
   }
 
-  EndsWith(
+  endsWith(
     value: StringValue | IColumnSelector<T>
   ) {
     this.parent.clear();
@@ -1228,7 +1087,7 @@ export class Where<
     return this;
   }
 
-  OrderByAsc(
+  orderByAsc(
     columnName:
       | IColumnSelector<T>
       | ArrayIColumnSelector<T>
@@ -1242,7 +1101,7 @@ export class Where<
     return this;
   }
 
-  OrderByDesc(
+  orderByDesc(
     columnName:
       | IColumnSelector<T>
       | ArrayIColumnSelector<T>
@@ -1256,7 +1115,7 @@ export class Where<
     return this;
   }
 
-  Limit(value: number) {
+  limit(value: number) {
     this.parent.clear();
     this.parent.others =
       this.parent.others.filter(
@@ -1268,7 +1127,7 @@ export class Where<
     return this;
   }
 
-  GroupBy(
+  groupBy(
     columnName:
       | IColumnSelector<T>
       | ArrayIColumnSelector<T>
@@ -1282,7 +1141,7 @@ export class Where<
     return this;
   }
 
-  InnerJoin<B, S extends string>(
+  innerJoin<B, S extends string>(
     tableName: D,
     alias: S
   ) {
@@ -1298,11 +1157,7 @@ export class Where<
       tableName,
       alias
     );
-    const join = new Where<
-      T & R<B, S>,
-      ParentType,
-      D
-    >(
+    const join = new Where<T & R<B, S>, ParentType, D>(
       tableName,
       this.parent,
       alias,
@@ -1312,7 +1167,7 @@ export class Where<
     return join;
   }
 
-  CrossJoin<B, S extends string>(
+  crossJoin<B, S extends string>(
     tableName: D,
     alias: S
   ) {
@@ -1342,7 +1197,7 @@ export class Where<
     return join;
   }
 
-  LeftJoin<B, S extends string>(
+  leftJoin<B, S extends string>(
     tableName: D,
     alias: S
   ) {
@@ -1372,7 +1227,7 @@ export class Where<
     return join;
   }
 
-  Join<B, S extends string>(
+  join<B, S extends string>(
     tableName: D,
     alias: S
   ) {
@@ -1402,7 +1257,7 @@ export class Where<
     return join;
   }
 
-  RightJoin<B, S extends string>(
+  rightJoin<B, S extends string>(
     tableName: D,
     alias: S
   ) {
@@ -1432,7 +1287,7 @@ export class Where<
     return join;
   }
 
-  Union<B extends IId<D>>(
+  union<B extends IId<D>>(
     ...queryselectors: IUnionSelector<B, D>[]
   ) {
     queryselectors.forEach(x =>
@@ -1444,7 +1299,7 @@ export class Where<
     return this;
   }
 
-  UnionAll<B extends IId<D>>(
+  unionAll<B extends IId<D>>(
     ...queryselectors: IUnionSelector<B, D>[]
   ) {
     queryselectors.forEach(x =>
@@ -1456,9 +1311,9 @@ export class Where<
     return this;
   }
 
-  get Where() {
+  get where() {
     this.parent.clear();
-    this.parent.where = new Where<
+    this.parent._where = new Where<
       T,
       ParentType,
       D
@@ -1475,7 +1330,7 @@ export default class QuerySelector<
   T extends IId<D>,
   D extends string
 > {
-  where?: Where<any, any, D>;
+  _where?: Where<any, any, D>;
   having?: Where<any, any, D>;
   joins: Where<any, any, D>[];
   unions: {
@@ -1484,11 +1339,7 @@ export default class QuerySelector<
   }[];
   tableName: D;
   alias: string = "";
-  queryColumnSelector?: QueryColumnSelector<
-    any,
-    any,
-    D
-  >;
+  queryColumnSelector?: QueryColumnSelector<any, any, D>;
   database: IDataBaseExtender<D>;
   jsonExpression: any;
   others: QValue[];
@@ -1536,13 +1387,13 @@ export default class QuerySelector<
       );
   }
 
-  get Select() {
+  get select() {
     this.queryColumnSelector =
       new QueryColumnSelector<T, T, D>(this);
     return this.queryColumnSelector;
   }
 
-  Union<B extends IId<D>>(
+  union<B extends IId<D>>(
     ...queryselectors: IUnionSelector<B, D>[]
   ) {
     queryselectors.forEach(x =>
@@ -1554,7 +1405,7 @@ export default class QuerySelector<
     return this;
   }
 
-  UnionAll<B extends IId<D>>(
+  unionAll<B extends IId<D>>(
     ...queryselectors: IUnionSelector<B, D>[]
   ) {
     queryselectors.forEach(x =>
@@ -1566,7 +1417,7 @@ export default class QuerySelector<
     return this;
   }
 
-  InnerJoin<B, S extends string>(
+  innerJoin<B, S extends string>(
     tableName: D,
     alias: S
   ) {
@@ -1592,7 +1443,7 @@ export default class QuerySelector<
     return join;
   }
 
-  CrossJoin<B, S extends string>(
+  crossJoin<B, S extends string>(
     tableName: D,
     alias: S
   ) {
@@ -1618,7 +1469,7 @@ export default class QuerySelector<
     return join;
   }
 
-  LeftJoin<B, S extends string>(
+  leftJoin<B, S extends string>(
     tableName: D,
     alias: S
   ) {
@@ -1644,7 +1495,7 @@ export default class QuerySelector<
     return join;
   }
 
-  Join<B, S extends string>(
+  join<B, S extends string>(
     tableName: D,
     alias: S
   ) {
@@ -1670,14 +1521,11 @@ export default class QuerySelector<
     return join;
   }
 
-  RightJoin<B, S extends string>(
+  rightJoin<B, S extends string>(
     tableName: D,
     alias: S
   ) {
-    if (
-      this.alias == alias ||
-      this.joins.find(x => x.alias == alias)
-    )
+    if (this.alias == alias || this.joins.find(x => x.alias == alias))
       throw `alias can not be ${alias}, it is already in use`;
     this.alias = "a";
     this.buildJsonExpression(tableName, alias);
@@ -1696,7 +1544,8 @@ export default class QuerySelector<
     return join;
   }
 
-  LoadChildren<B extends IId<D>>(
+
+  loadChildren<B extends IId<D>>(
     child: D,
     childColumn: NonFunctionPropertyNames<B>,
     parentColumn: NonFunctionPropertyNames<T>,
@@ -1760,21 +1609,10 @@ export default class QuerySelector<
 
   async firstOrDefault() {
     var item = this.getSql("SELECT");
-    let tItem = Functions.single<any>(
-      await this.database.find(
-        item.sql,
-        item.args,
-        this.tableName
-      )
-    );
+    let tItem = Functions.single<any>(await this.database.find(item.sql, item.args, this.tableName));
     if (tItem && this.converter)
       tItem = this.converter(tItem);
-    return tItem
-      ? await createQueryResultType<T, D>(
-        tItem,
-        this.database,
-        this.children
-      )
+    return tItem ? await createQueryResultType<T, D>(tItem, this.database, this.children)
       : undefined;
   }
 
@@ -1802,9 +1640,7 @@ export default class QuerySelector<
   getSql(sqlType: "SELECT" | "DELETE") {
     return (this.translator = this.translator
       ? this.translator
-      : new QuerySelectorTranslator(
-        this
-      )).translate(sqlType);
+      : new QuerySelectorTranslator(this)).translate(sqlType);
   }
 
   getInnerSelectSql() {
@@ -1815,7 +1651,7 @@ export default class QuerySelector<
       )).translateToInnerSelectSql();
   }
 
-  OrderByAsc(
+  orderByAsc(
     columnName:
       | IColumnSelector<T>
       | ArrayIColumnSelector<T>
@@ -1829,7 +1665,7 @@ export default class QuerySelector<
     return this;
   }
 
-  OrderByDesc(
+  orderByDesc(
     columnName:
       | IColumnSelector<T>
       | ArrayIColumnSelector<T>
@@ -1843,7 +1679,7 @@ export default class QuerySelector<
     return this;
   }
 
-  Limit(value: number) {
+  limit(value: number) {
     this.clear();
     this.others = this.others.filter(
       x => x.args !== Param.Limit
@@ -1854,7 +1690,7 @@ export default class QuerySelector<
     return this;
   }
 
-  GroupBy(
+  groupBy(
     columnName:
       | IColumnSelector<T>
       | ArrayIColumnSelector<T>
@@ -1867,12 +1703,12 @@ export default class QuerySelector<
     );
   }
 
-  get Where() {
-    this.where = new Where<T, T, D>(
+  get where() {
+    this._where = new Where<T, T, D>(
       this.tableName,
       this,
       this.alias
     );
-    return this.where;
+    return this._where;
   }
 }

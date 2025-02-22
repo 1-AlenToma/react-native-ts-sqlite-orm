@@ -5,7 +5,7 @@ You could very easily watch all db operations like `insert, delete and update`.
 const dbContext = new DbContext();
 const App =()=> {
   useEffect(()=> {
-     var watcher = dbContext.database.watch<Parent>("Parents");
+     var watcher = dbContext.watch<Parent>("Parents");
      watcher.onSave = async (items, operation)=> {
        // operation = "INSERT" OR "UPDATE"
         console.log(items);

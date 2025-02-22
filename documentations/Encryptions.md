@@ -14,8 +14,7 @@ class User extends Table<TableNames>{
       this.password= "secret";
     }
     
-  static GetTableStructor() {
-    return Table.TableBuilder<User, TableNames>("Users").
+  static tb = this.TableBuilder<User, TableNames>("Users").
     column("name").
     column("password").encrypt("myscret key").
     objectPrototype(User.prototype)
@@ -37,7 +36,7 @@ To be able to search those column, you have tow diffrent ways.
 ### example 1
 ```ts
   // 123 will be encrypted so it could be compare to the value in the database
-  var item = await dbContext.database.querySelector<User>("Users").column(x=> x.password).EqualTo("123").toList();
+  var item = await dbContext.querySelector<User>("Users").column(x=> x.password).EqualTo("123").toList();
 
 ```
 
@@ -45,5 +44,5 @@ To be able to search those column, you have tow diffrent ways.
 ```ts
   import  { encrypt, decrypt } from 'react-native-sqlite-orm'
   // manually encrypt the value and send it to the database
-  var items = await dbContext.database.find("select * from Users where password = ?", [encrypt("123", "myscret key")], "Users");
+  var items = await dbContext.find("select * from Users where password = ?", [encrypt("123", "myscret key")], "Users");
 ```

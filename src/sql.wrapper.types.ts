@@ -6,9 +6,54 @@ import {
 
 export type Query = { sql: string, args: any[] };
 
+export type Operations = "READ" | "WRITE";
+
 export type DatabaseDrive = {
-  executeSql: (sql: string, args: any[]) => Promise<any[]>;
+  /**
+   * 
+   * @param operation READ FOR READING DATA, WITE FOR INSERTING , UPDATING AND DELETING ETC..
+   * @param sql 
+   * @param args 
+   * @returns 
+   */
+  executeSql: (operation: Operations, sql: string, args: any[]) => Promise<any[]>;
   close(): Promise<void>;
+}
+
+export type IWhereProp<D extends string> = {
+  tableName: D;
+  alias?: string;
+  Queries: any[];
+  assignChildrenType?: "List" | "Item";
+}
+
+export type GlobalIQuerySelector<T, D extends string> = {
+  /**
+   * get the translated sql
+   */
+  getSql: (sqlType: "DELETE" | "SELECT") => Query;
+
+  getInnerSelectSql: () => string;
+};
+
+export type IChildrenLoader = {
+  query: Query;
+  assignedTo: string;
+}
+
+export type IQuerySelectorProps<D extends string> = {
+  _where?: IWhereProp<D>;
+  having?: IWhereProp<D>;
+  joins: IWhereProp<D>[];
+  others: any[];
+  tableName: D;
+  alias: string;
+  children: IChildLoader<D>[];
+  converter?: (x: any) => any;
+  database: IDataBaseExtender<D>;
+  jsonExpression: any;
+  queryColumnSelector?: any;
+  unions: any[];
 }
 
 export type ColumnType =
