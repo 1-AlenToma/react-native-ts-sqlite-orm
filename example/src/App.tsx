@@ -18,7 +18,9 @@ export default function App() {
         emptyItem.novel = "test";
         emptyItem.title = "tll";
         let item = await dbContext.querySelector<DetaliItems>("DetaliItems")
-   
+        .include<Chapters>("Chapters").column("id", "detaliItem_Id").toList("children")
+          .where.column(x => x.id).equalAndGreaterThen(0).findOrSave(emptyItem)
+
         /*  for (let i = 0; i < 2; i++) {
             let chap = new Chapters();
             chap.chapterUrl = "http:" + i;
@@ -26,7 +28,7 @@ export default function App() {
             dbContext.save(chap);
           }
     */
-        console.log(await item.where.column(x => x.id).equalAndGreaterThen(0).findOrSave(emptyItem))
+        console.log(item)
       } catch (e) {
         console.error(e)
       }

@@ -223,15 +223,6 @@ export type IDataBaseExtender<D extends string> =
     ) => Promise<void>;
   } & IDatabase<D>;
 
-export interface IChildQueryLoader<
-  T,
-  B extends IId<D>,
-  D extends string
-> {
-  With: <E>(columnName: NonFunctionPropertyNames<E>
-  ) => IChildQueryLoader<T, B, D>;
-  AssignTo: <S, E>(columnName: NonFunctionPropertyNames<B>) => IQuery<B, D>;
-}
 
 export type WatchIdentifier = "Hook" | "Other";
 
@@ -292,68 +283,6 @@ export interface IQuaryResult<D extends string> {
   children: IChildLoader<D>[];
 }
 
-export interface IQuery<
-  T extends IId<D>,
-  D extends string
-> {
-  Column: (
-    columnName: NonFunctionPropertyNames<T>
-  ) => IQuery<T, D>;
-  EqualTo: (value: SingleValue) => IQuery<T, D>;
-  Contains: (value: StringValue) => IQuery<T, D>;
-  StartWith: (value: StringValue) => IQuery<T, D>;
-  EndWith: (value: StringValue) => IQuery<T, D>;
-  NotEqualTo: (
-    value: SingleValue
-  ) => IQuery<T, D>;
-  EqualAndGreaterThen: (
-    value: NumberValue | StringValue
-  ) => IQuery<T, D>;
-  EqualAndLessThen: (
-    value: NumberValue | StringValue
-  ) => IQuery<T, D>;
-  Start: () => IQuery<T, D>;
-  End: () => IQuery<T, D>;
-  OR: () => IQuery<T, D>;
-  AND: () => IQuery<T, D>;
-  GreaterThan: (
-    value: NumberValue | StringValue
-  ) => IQuery<T, D>;
-  LessThan: (
-    value: NumberValue | StringValue
-  ) => IQuery<T, D>;
-  IN: (value: ArrayValue) => IQuery<T, D>;
-  NotIn: (value: ArrayValue) => IQuery<T, D>;
-  Null: () => IQuery<T, D>;
-  NotNull: () => IQuery<T, D>;
-  OrderByDesc: (
-    columnName: NonFunctionPropertyNames<T>
-  ) => IQuery<T, D>;
-  OrderByAsc: (
-    columnName: NonFunctionPropertyNames<T>
-  ) => IQuery<T, D>;
-  Limit: (value: number) => IQuery<T, D>;
-  LoadChildren: <B extends IId<D>>(
-    childTableName: D,
-    parentProperty: NonFunctionPropertyNames<T>
-  ) => IChildQueryLoader<B, T, D>;
-  LoadChild: <B extends IId<D>>(
-    childTableName: D,
-    parentProperty: NonFunctionPropertyNames<T>
-  ) => IChildQueryLoader<B, T, D>;
-  delete: () => Promise<void>;
-  firstOrDefault: () => Promise<
-    IQueryResultItem<T, D> | undefined
-  >;
-  findOrSave: (
-    item: T & IBaseModule<D>
-  ) => Promise<IQueryResultItem<T, D>>;
-  toList: () => Promise<IQueryResultItem<T, D>[]>;
-  getQueryResult: (
-    operation?: "SELECT" | "DELETE"
-  ) => IQuaryResult<D>;
-}
-
 export type IQueryResultItem<
   T,
   D extends string
@@ -374,7 +303,6 @@ const OUseQuery = <
 >(
   tableName: D,
   query:
-    | IQuery<T, D>
     | Query
     | IReturnMethods<T, D>
     | (() => Promise<T[]>),

@@ -1,7 +1,6 @@
 import {
   IDatabase,
   IId,
-  IQuery,
   IQueryResultItem,
   Query
 } from "../sql.wrapper.types";
@@ -21,7 +20,6 @@ const UseQuery = <
   D extends string
 >(
   query:
-    | IQuery<T, D>
     | Query
     | IReturnMethods<T, D>
     | (() => Promise<T[]>),
@@ -55,9 +53,9 @@ const UseQuery = <
         if (!refMounted.current) return;
         setIsLoading(true);
         const sQuery = query as Query;
-        const iQuery = query as IQuery<T, D>;
+        const iQuery = query as IReturnMethods<T, D>;
         const fn = query as () => Promise<T[]>;
-        if (iQuery.Column !== undefined) {
+        if (iQuery.toList !== undefined) {
           dataRef.current = await iQuery.toList();
         } else if (!Functions.isFunc(query)) {
           const r = [] as IQueryResultItem<

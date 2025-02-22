@@ -13,7 +13,8 @@ export class DetaliItems extends Table<TableNames> {
     static tb = this.TableBuilder<DetaliItems, TableNames>("DetaliItems")
         .column("title")
         .column("description").nullable
-        .column("novel").encrypt("testEncryptions")
+        .column("novel")
+        .encrypt("testEncryptions")
 }
 
 export class Chapters extends Table<TableNames> {

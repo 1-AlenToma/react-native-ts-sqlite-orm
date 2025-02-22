@@ -45,7 +45,7 @@ See [querySelector](https://github.com/AlenToma/react-native-sqlite-orm/blob/mai
 You could also use `querySelector` builder to load children.
 
 ```ts
-      var item = await dbContext.querySelector<Parent>("Parents").LoadChildren<Child>("Childrens", "parentId", "id", "children", true).where
+      var item = await dbContext.querySelector<Parent>("Parents").include<Child>("Childrens").column("id", "parentId").toList("children").where
      .start.column(x=> x.name).in(["name", "testName"]).end
      .or
      .start.column(x=> x.email).contains("test@").end

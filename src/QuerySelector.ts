@@ -66,6 +66,27 @@ export declare type StringValue =
   | string
   | undefined;
 
+export type IInclude<T, B, D extends string> = {
+  /**
+   * columns to join
+   * @param ca Parent Column
+   * @param cb ChildColumn
+   * @returns 
+   */
+  column: (ca: NonFunctionPropertyNames<T>, cb: NonFunctionPropertyNames<B>) => IInclude<T, B, D>;
+  /**
+   * load the items as a list
+   * @param assignTo Parent prob that the result will be assigned to 
+   * @returns 
+   */
+  toList: (assignTo: NonFunctionPropertyNames<T>) => IQuerySelector<T, D>;
+    /**
+   * load the items as a single item
+   * @param assignTo Parent prob that the result will be assigned to 
+   * @returns 
+   */
+  firstOrDefault: (assignTo: NonFunctionPropertyNames<T>) => IQuerySelector<T, D>;
+}
 
 
 export interface IReturnMethods<T, D extends string> extends GlobalIQuerySelector<T, D> {
@@ -292,16 +313,6 @@ export interface GenericQuery<
    */
   endCase: GenericQueryWithValue<ReturnType> &
   ReturnType;
-  /**
-   * Load Child or children
-   */
-  loadChildren: <B extends IId<D>>(
-    child: D,
-    childColumn: NonFunctionPropertyNames<B>,
-    parentColumn: NonFunctionPropertyNames<ParentType>,
-    assignTo: NonFunctionPropertyNames<ParentType>,
-    isArray?: boolean
-  ) => ReturnType;
 }
 
 export type GenericQueryWithValue<ReturnType> = {
@@ -470,13 +481,7 @@ export interface IQuerySelector<T, D extends string> extends IReturnMethods<T, D
   /**
    * Load Child or children
    */
-  loadChildren: <B extends IId<D>>(
-    child: D,
-    childColumn: NonFunctionPropertyNames<B>,
-    parentColumn: NonFunctionPropertyNames<T>,
-    assignTo: NonFunctionPropertyNames<T>,
-    isArray?: boolean
-  ) => IQuerySelector<T, D>;
+  include: <B extends IId<D>>(childTable: D) => IInclude<T, B, D>;
 
   select: IQueryColumnSelector<T, T, D>;
 
@@ -764,6 +769,41 @@ class QueryColumnSelector<
   }
 }
 
+
+export class Include<ParentType extends IId<D>, B, D extends string> implements IInclude<ParentType, B, D> {
+  private tableName: D;
+  private parent: QuerySelector<ParentType, D>;
+  private item: IChildLoader<D> = {} as any;
+  constructor(tableName: D, parent: QuerySelector<ParentType, D>) {
+    this.tableName = tableName;
+    this.parent = parent;
+  }
+  column(ca: NonFunctionPropertyNames<ParentType>, cb: NonFunctionPropertyNames<B>) {
+    this.item.parentProperty = ca as string;
+    this.item.parentTable = this.parent.tableName;
+    this.item.childProperty = cb as string;
+    this.item.childTableName = this.tableName;
+    return this;
+  }
+  toList(assignTo: NonFunctionPropertyNames<ParentType>) {
+    if (!this.item.childProperty)
+      throw "Please select the columns for Include"
+    this.item.assignTo = assignTo as string;
+    this.item.isArray = true;
+    this.parent.children.push(this.item);
+    return this.parent as any as IQuerySelector<ParentType, D>;
+  };
+  firstOrDefault(assignTo: NonFunctionPropertyNames<ParentType>) {
+    if (!this.item.childProperty)
+      throw "Please select the columns for Include"
+    this.item.assignTo = assignTo as string;
+    this.item.isArray = false;
+    this.parent.children.push(this.item);
+    return this.parent as any as IQuerySelector<ParentType, D>;
+  };
+
+}
+
 export class Where<T, ParentType extends IId<D>, D extends string> extends ReturnMethods<T, ParentType, D> {
   tableName: D;
   alias?: string;
@@ -781,24 +821,6 @@ export class Where<T, ParentType extends IId<D>, D extends string> extends Retur
     );
     this.tableName = tableName;
     this.alias = alias;
-  }
-
-  loadChildren<B extends IId<D>>(
-    child: D,
-    childColumn: NonFunctionPropertyNames<B>,
-    parentColumn: NonFunctionPropertyNames<ParentType>,
-    assignTo: NonFunctionPropertyNames<ParentType>,
-    isArray?: boolean
-  ) {
-    this.parent.children.push({
-      parentProperty: parentColumn as string,
-      parentTable: this.parent.tableName,
-      childProperty: childColumn as string,
-      childTableName: child,
-      assignTo: assignTo as string,
-      isArray: isArray ?? false
-    });
-    return this;
   }
 
   get case() {
@@ -1545,22 +1567,8 @@ export default class QuerySelector<
   }
 
 
-  loadChildren<B extends IId<D>>(
-    child: D,
-    childColumn: NonFunctionPropertyNames<B>,
-    parentColumn: NonFunctionPropertyNames<T>,
-    assignTo: NonFunctionPropertyNames<T>,
-    isArray?: boolean
-  ) {
-    this.children.push({
-      parentProperty: parentColumn as string,
-      parentTable: this.tableName,
-      childProperty: childColumn as string,
-      childTableName: child,
-      assignTo: assignTo as string,
-      isArray: isArray ?? false
-    });
-    return this;
+  include<B extends IId<D>>(childTable: D) {
+    return new Include<T, B, D>(childTable, this);
   }
 
   async delete() {

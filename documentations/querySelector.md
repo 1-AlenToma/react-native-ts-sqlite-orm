@@ -8,27 +8,40 @@ That mean when you make changes to your objects and so on, You will notice those
 const query= dbContext.querySelector<Parent>("Parents");
 
 // you could load children and join parentId with Id and assign the result to children
-query.loadChildren<Child>("Childrens", "parentId", "id", "children", true);
+query.include<Child>("Childrens").column("id", "parentId").toList("children");
 
 // Simple Where
 query.where.column(x=> x.id).equalTo(1);
 
 // you could join, left join, crossjoin and innerJoin
-query.join<Child, "b">("Children", "b").column(x=> x.a.id).equalTo(x=> x.b.parentId).where.column(x=> x.b.name).not.in(["test", "test"]);
+query.join<Child, "b">("Children", "b").column(x=> x.a.id).equalTo(x=> x.b.parentId)
+.where.column(x=> x.b.name).not.in(["test", "test"]);
 
 // You could Select
-query.join<Child, "b" >("Children", "b").column(x=> x.a.id).equalTo(x=> x.b.parentId).where.column(x=> x.b.name).not.in(["test", "test"]).select.columns((x, as) => [x.a.id, x.b.name, as(x.a.email, "user email")]);
+query.join<Child, "b" >("Children", "b").column(x=> x.a.id).equalTo(x=> x.b.parentId)
+.where.column(x=> x.b.name).not.in(["test", "test"]).select.columns((x, as) => [x.a.id, x.b.name, as(x.a.email, "user email")]);
 
 // you could use sqlite aggrigatos like count, min, max and more
-query.join<Child, "b">("Children", "b").column(x=> x.a.id).equalTo(x=> x.b.parentId).where.column(x=> x.b.name).not.in(["test", "test"]).select.count(x=> x.a.id, "idCount").count(x=> "*", "AllRows");
+query.join<Child, "b">("Children", "b").column(x=> x.a.id).equalTo(x=> x.b.parentId)
+.where.column(x=> x.b.name).not.in(["test", "test"])
+.select.count(x=> x.a.id, "idCount").count(x=> "*", "AllRows");
 
 // you could also use having
-query.join<Child, "b">("Children", "b").column(x=> x.a.id).equalTo(x=> x.b.parentId).where.column(x=> x.b.name).not.in(["test", "test"]).select.count(x=> x.a.id, "idCount").having.column("idCount").greaterThen(5);
+query.join<Child, "b">("Children", "b").column(x=> x.a.id).equalTo(x=> x.b.parentId)
+.where.column(x=> x.b.name).not.in(["test", "test"])
+.select.count(x=> x.a.id, "idCount").having.column("idCount").greaterThen(5);
 
 // You could also cast or convert your data to different objects
-const items = query.join<Child, "b">("Children", "b").column(x=> x.a.id).equalTo(x=> x.b.parentId).where.column(x=> x.b.name).not.in(["test", "test"]).select.count(x=> x.a.id, "idCount").having.column("idCount").greaterThen(5).cast<MyJoinObject>().toList();
+const items = query.join<Child, "b">("Children", "b").column(x=> x.a.id).equalTo(x=> x.b.parentId)
+.where.column(x=> x.b.name).not.in(["test", "test"])
+.select.count(x=> x.a.id, "idCount").having.column("idCount").greaterThen(5)
+.cast<MyJoinObject>().toList();
 // or to convert
-const item = query.join<Child, "b">("Children", "b").column(x=> x.a.id).equalTo(x=> x.b.parentId).where.column(x=> x.b.name).not.in(["test", "test"]).select.count(x=> x.a.id, "idCount").having.column("idCount").greaterThen(5).cast<MyJoinObject>(x=> new MyJoinObject(x)).toList();
+const item = query.join<Child, "b">("Children", "b").column(x=> x.a.id).equalTo(x=> x.b.parentId)
+.where.column(x=> x.b.name).not.in(["test", "test"])
+.select.count(x=> x.a.id, "idCount")
+.having.column("idCount").greaterThen(5)
+.cast<MyJoinObject>(x=> new MyJoinObject(x)).toList();
 
 // You could also use inner select this will be converted to `select * from Parents where id in (select parentId from Childrens)`
 query.where.column(x=> x.id).in(dbContext.querySelector<Child>("Childrens").select.columns(x=> [x.parentId]))
