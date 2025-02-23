@@ -1,5 +1,7 @@
 # react-native-ts-sqlite-orm
-  This is a fully typescript sqlite-ORM-builder, It will make operation like `UPDATE`, `SELECT` AND `INSERT` and `delete` a lot easier to handle.
+  This is a fully typescript sqlite-ORM-builder, It will make operation like `UPDATE`, `SELECT`, `INSERT` and `DELETE` a lot easier to handle.
+
+  Even when building you sql we are able to use `linq` like ways using typescript js.
 
  ## Installations
 
