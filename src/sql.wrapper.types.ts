@@ -16,7 +16,7 @@ export type DatabaseDrive = {
    * @param args 
    * @returns 
    */
-  executeSql: (operation: Operations, sql: string, args: any[]) => Promise<any[]>;
+  executeSql: (sql: string, args: any[], operation: Operations) => Promise<any[]>;
   close(): Promise<void>;
 }
 

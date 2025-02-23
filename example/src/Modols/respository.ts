@@ -12,7 +12,7 @@ export default class repository extends Database<TableNames> {
             let db = await SQLite.openDatabaseAsync("test.db");
             let driver: DatabaseDrive = {
                 close: async () => await db.closeAsync(),
-                executeSql: async (operation, sql, args) => {
+                executeSql: async (sql, args, operation) => {
                     let result: any[] = [];
                     console.info("Sql Operation", operation);
                     if (operation == "WRITE") {

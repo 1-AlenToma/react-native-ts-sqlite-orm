@@ -164,9 +164,9 @@ class Database<D extends string>
       this.info("adding", table.tableName)
       this.tables.push(table as any)
       let items = Functions.reorderTables(this.tables as any);
-      if (items.length == this.tables.length){
+      if (items.length == this.tables.length) {
         this.tables = items;
-        this.info("Sorting table tree, to ", items.map(x=> x.tableName))
+        this.info("Sorting table tree, to ", items.map(x => x.tableName))
       }
     }
   }
@@ -686,7 +686,7 @@ class Database<D extends string>
 
   private async getAllAsync(q: string, ...args: any[]) {
     let db = await this.dataBase();
-    let result = await db.executeSql("READ", q, args);
+    let result = await db.executeSql(q, args, "READ");
     return (result ?? []).map(x => x);
   }
 
@@ -927,8 +927,8 @@ class Database<D extends string>
       let db = await this.dataBase();
       for (let sql of queries) {
         if (sql.args.length > 0)
-          await db.executeSql("WRITE", sql.sql, sql.args);
-        else await db.executeSql("WRITE", sql.sql, []);
+          await db.executeSql(sql.sql, sql.args, "WRITE");
+        else await db.executeSql(sql.sql, [], "WRITE");
       }
     } catch (e) {
       console.error(e);
