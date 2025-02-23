@@ -8,9 +8,8 @@ Here is how simple it is to use it.
 
 ```tsx
 const Name =()=> {
- const [users, dataIsLoading] = 
-  DbContext.useQuery<User>("Users",
-  DbContext.querySelector<User>("Users").where.column(x=> x.name).startsWith("t"));
+ const [users, loading] = 
+  DbContext.Users.useQuery(DbContext.Users.query.where.column(x=> x.name).startsWith("t"));
 
 return (
     <>
@@ -33,9 +32,4 @@ Could be one of the folowing `(Query) | (IReturnMethods<T, D>) | (() => Promise<
 
 The initiated data.
 
-### onDbItemChanged(Optional)
-
-When Changes Happend to the database, `useQuery` have to request `query` from the db, and incase the data is big, you could use this instead to skip the request to the database.
-
-eg `(items)=> items.filter(x=> x.name.startWith("t"))`
 

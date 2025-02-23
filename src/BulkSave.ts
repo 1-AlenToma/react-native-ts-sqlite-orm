@@ -1,7 +1,7 @@
 import {
-  IBaseModule,
   IDatabase,
   IDataBaseExtender,
+  IId,
   Query
 } from "./sql.wrapper.types";
 import {
@@ -29,7 +29,7 @@ export default class BulkSave<
   }
 
   insert(
-    items: IBaseModule<D> | IBaseModule<D>[]
+    items: IId<D> | IId<D>[]
   ) {
     const itemArray = Array.isArray(items)
       ? items
@@ -93,7 +93,7 @@ export default class BulkSave<
   }
 
   update(
-    items: IBaseModule<D> | IBaseModule<D>[]
+    items: IId<D> | IId<D>[]
   ) {
     const itemArray = Array.isArray(items)
       ? items
@@ -153,7 +153,7 @@ export default class BulkSave<
   }
 
   delete(
-    items: IBaseModule<D> | IBaseModule<D>[]
+    items: IId<D> | IId<D>[]
   ) {
     const itemArray = Array.isArray(items)
       ? items

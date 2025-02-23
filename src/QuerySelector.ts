@@ -4,9 +4,9 @@ import {
   IQueryResultItem,
   IId,
   GlobalIQuerySelector,
-  IBaseModule,
   IChildLoader,
-  NonFunctionPropertyNames
+  NonFunctionPropertyNames,
+  ObjectPropertyNamesNames
 } from "./sql.wrapper.types";
 import QuerySelectorTranslator from "./QuerySelectorTranslator";
 import {
@@ -79,20 +79,20 @@ export type IInclude<T, B, D extends string> = {
    * @param assignTo Parent prob that the result will be assigned to 
    * @returns 
    */
-  toList: (assignTo: NonFunctionPropertyNames<T>) => IQuerySelector<T, D>;
-    /**
-   * load the items as a single item
-   * @param assignTo Parent prob that the result will be assigned to 
-   * @returns 
-   */
-  firstOrDefault: (assignTo: NonFunctionPropertyNames<T>) => IQuerySelector<T, D>;
+  toList: (assignTo: ObjectPropertyNamesNames<T>) => IQuerySelector<T, D>;
+  /**
+ * load the items as a single item
+ * @param assignTo Parent prob that the result will be assigned to 
+ * @returns 
+ */
+  firstOrDefault: (assignTo: ObjectPropertyNamesNames<T>) => IQuerySelector<T, D>;
 }
 
 
 export interface IReturnMethods<T, D extends string> extends GlobalIQuerySelector<T, D> {
   firstOrDefault: () => Promise<IQueryResultItem<T, D> | undefined>;
   toList: () => Promise<IQueryResultItem<T, D>[]>;
-  findOrSave: (item: T & IBaseModule<D>) => Promise<IQueryResultItem<T, D>>;
+  findOrSave: (item: T & IId<D>) => Promise<IQueryResultItem<T, D>>;
   /**
   * delete based on Query above.
   */
@@ -483,6 +483,13 @@ export interface IQuerySelector<T, D extends string> extends IReturnMethods<T, D
    */
   include: <B extends IId<D>>(childTable: D) => IInclude<T, B, D>;
 
+  /**
+   * load children or parent, see TableBuilder.hasMany and hasParent as the prop must be included there for it to work
+   * @param prop 
+   * @returns 
+   */
+  load: (...props: ObjectPropertyNamesNames<T>[]) => IQuerySelector<T, D>;
+
   select: IQueryColumnSelector<T, T, D>;
 
 }
@@ -567,7 +574,7 @@ class ReturnMethods<T,
   }
 
   async findOrSave(
-    item: ParentType & IBaseModule<D>
+    item: ParentType & IId<D>
   ) {
     return await this.parent.findOrSave(item);
   }
@@ -785,7 +792,7 @@ export class Include<ParentType extends IId<D>, B, D extends string> implements 
     this.item.childTableName = this.tableName;
     return this;
   }
-  toList(assignTo: NonFunctionPropertyNames<ParentType>) {
+  toList(assignTo: ObjectPropertyNamesNames<ParentType>) {
     if (!this.item.childProperty)
       throw "Please select the columns for Include"
     this.item.assignTo = assignTo as string;
@@ -793,7 +800,7 @@ export class Include<ParentType extends IId<D>, B, D extends string> implements 
     this.parent.children.push(this.item);
     return this.parent as any as IQuerySelector<ParentType, D>;
   };
-  firstOrDefault(assignTo: NonFunctionPropertyNames<ParentType>) {
+  firstOrDefault(assignTo: ObjectPropertyNamesNames<ParentType>) {
     if (!this.item.childProperty)
       throw "Please select the columns for Include"
     this.item.assignTo = assignTo as string;
@@ -1571,22 +1578,26 @@ export default class QuerySelector<
     return new Include<T, B, D>(childTable, this);
   }
 
-  async delete() {
-    var item = this.getSql("DELETE");
-    console.log("Execute delete:" + item.sql);
-    await this.database.execute(
-      item.sql,
-      item.args
-    );
-    await (this.database as any).triggerWatch(
-      [],
-      "onDelete",
-      undefined,
-      this.tableName
-    );
+  load(...props: ObjectPropertyNamesNames<T>[]) {
+    for (let prop of props) {
+      let table = this.database.tables.find(x => x.tableName == this.tableName);
+      let child = table?.children.find(x => x.assignTo == prop);
+      if (child)
+        this.children.push({ ...child });
+      else throw `loading ${prop as string} is not possible as it is not included in TableBuilder hasMany or has Parent`;
+    }
+    return this;
   }
 
-  async findOrSave(item: T & IBaseModule<D>) {
+  async delete() {
+    var item = this.getSql("DELETE");
+    let where = item.sql.replace(/(delete from)(\s)[a-zA-Z]+(\s)/gim, "").trim();
+    await Functions.executeContraineDelete(this.tableName, this.database, where, item.args);
+    await this.database.execute(item.sql, item.args);
+    await (this.database as any).triggerWatch([], "onDelete", undefined, this.tableName);
+  }
+
+  async findOrSave(item: T & IId<D>) {
     const sql = this.getSql("SELECT");
     (item as any).tableName = this.tableName;
     var dbItem = Functions.single<any>(
@@ -1646,9 +1657,7 @@ export default class QuerySelector<
   }
 
   getSql(sqlType: "SELECT" | "DELETE") {
-    return (this.translator = this.translator
-      ? this.translator
-      : new QuerySelectorTranslator(this)).translate(sqlType);
+    return (this.translator = this.translator ? this.translator : new QuerySelectorTranslator(this)).translate(sqlType);
   }
 
   getInnerSelectSql() {

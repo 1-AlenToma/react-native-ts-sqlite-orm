@@ -1,34 +1,44 @@
 import { Text, View, StyleSheet } from 'react-native';
 import * as React from "react";
 import repository from './Modols/respository';
-import { DetaliItems, Chapters } from './Modols/dbModols';
-
-const result = 0;
-
+import { DetaliItems } from './Modols/dbModols';
+let result = 0;
 const dbContext = new repository();
+
 export default function App() {
-  const [data, loading] = dbContext.useQuery<DetaliItems>("DetaliItems",
-    dbContext.querySelector<DetaliItems>("DetaliItems")
-      .include<Chapters>("Chapters").column("id", "detaliItem_Id").toList("children")
-      .where.column(x => x.id).equalAndGreaterThen(0)
-  )
+  const [data, setData] = React.useState<DetaliItems[]>()
 
   React.useEffect(() => {
     (async () => {
       try {
-        // await dbContext.dropTables();
+       // await dbContext.dropTables();
         await dbContext.setUpDataBase();
-        await dbContext.migrateNewChanges();
+      //  await dbContext.migrateNewChanges();
+        setData(await dbContext.DetaliItems.getAll());
       } catch (e) {
         console.error(e)
       }
     })();
   }, [])
 
-  React.useEffect(()=>{
-    if (!loading)
-        console.warn(data)
-  },[loading])
+  React.useEffect(() => {
+    (async () => {
+      if (data && data.length > 0) {
+        for (let item of data) {
+          await item.load("children");
+          for (let c of item.children)
+            await c.load("parent")
+        }
+        // console.warn(JSON.stringify(data, undefined, 4))
+
+      }
+      if (data) {
+        if (result == 0)
+          dbContext.DetaliItems.query.where.column(x => x.novel).not.contains("test").delete();
+        result++;
+      }
+    })();
+  }, [data])
 
 
   return (

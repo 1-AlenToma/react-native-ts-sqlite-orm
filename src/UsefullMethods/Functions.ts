@@ -1,8 +1,93 @@
 import 'react-native-get-random-values';
 import Errors from "./Errors";
-import { IBaseModule, IDataBaseExtender, IId, ITableBuilder } from '../sql.wrapper.types'
+import { ColumnType, IDataBaseExtender, IId, ITableBuilder, Query } from '../sql.wrapper.types'
 import crypto from 'crypto-js';
 class Functions {
+
+     reorderTables(jsonData: ITableBuilder<any, string>[]) {
+        const tableMap = Object.fromEntries(jsonData.map(table => [table.tableName, table]));
+        const dependencyGraph = Object.fromEntries(jsonData.map(table => [table.tableName, new Set()]))
+        
+        // Build dependency graph
+        jsonData.forEach(table => {
+            (table.constrains || []).forEach(constraint => {
+                const parentTable = constraint.contraintTableName;
+                dependencyGraph[table.tableName].add(parentTable);
+            });
+        });
+        
+        // Topological sorting using Kahn's Algorithm
+        const sortedTables = [];
+        const noDependencyTables = jsonData.filter(table => dependencyGraph[table.tableName].size === 0);
+        
+        while (noDependencyTables.length) {
+            const table = noDependencyTables.shift();
+            sortedTables.push(table);
+            
+            jsonData.forEach(otherTable => {
+                if (dependencyGraph[otherTable.tableName].has(table.tableName)) {
+                    dependencyGraph[otherTable.tableName].delete(table.tableName);
+                    if (dependencyGraph[otherTable.tableName].size === 0) {
+                        noDependencyTables.push(tableMap[otherTable.tableName]);
+                    }
+                }
+            });
+        }
+        
+        return sortedTables;
+    }
+
+    deleteWithContrains(tableName: string, db: IDataBaseExtender<string>, innerSelectSqlWhere: string, args: any[], sqls?: { constrain: any, sql: Query }[]) {
+        sqls = sqls ?? [];
+
+        let tableContrains = db.tables.find(x => x.constrains.find(c => c.contraintTableName == tableName && !sqls.find(e => e.constrain == c)));
+        if (tableContrains) {
+            let constrain = tableContrains.constrains.find(x => x.contraintTableName == tableName);
+            sqls.push({ constrain: constrain, sql: { sql: `DELETE FROM ${tableContrains.tableName} where ${constrain.columnName as string} in (SELECT ${constrain.contraintColumnName} FROM ${constrain.contraintTableName} ${innerSelectSqlWhere})`, args } });
+            this.deleteWithContrains(tableContrains.tableName, db, `WHERE ${constrain.columnName as string} in (SELECT ${constrain.contraintColumnName} FROM ${constrain.contraintTableName} ${innerSelectSqlWhere})`, args, sqls);
+        }
+        return sqls;
+    }
+
+    async executeContraineDelete(tableName: string, db: IDataBaseExtender<string>, innerSelectSqlWhere: string, args: any[]) {
+        try {
+            const sqls = this.deleteWithContrains(tableName, db, innerSelectSqlWhere, args);
+            // db.info("removing contraines data for item in table ", tableName, "SQL", sqls.map(x => x.sql))
+            for (let sql of sqls) {
+                await db.execute(sql.sql.sql, sql.sql.args);
+            }
+        } catch (e) {
+            db.error(e);
+        }
+    }
+
+    dbType(columnType: ColumnType) {
+        if (
+            columnType == "Boolean" ||
+            columnType == "Number"
+        )
+            return "INTEGER";
+        if (columnType == "Decimal") return "REAL";
+        if (columnType == "BLOB") return "BLOB";
+        return "TEXT";
+    };
+
+    dbDefaultValue(columnType: ColumnType, value?: any) {
+        if (value == undefined)
+            return "";
+        if (value === null)
+            return ` DEFAULT NULL`;
+
+        if (columnType == "JSON" && typeof value == "object")
+            value = JSON.stringify(value);
+
+        if (columnType == "String" || columnType == "JSON")
+            return ` DEFAULT '${value}'`;
+
+        return ` DEFAULT ${value}`;
+    }
+
+
     encryptionsIdentifier = "#dbEncrypted&";
     buildJsonExpression(jsonExpression: any, database: IDataBaseExtender<string>, tableName: string, alias: string, isInit?: boolean) {
         const table = database.tables.find(x => x.tableName == tableName);
@@ -109,7 +194,7 @@ class Functions {
         return item;
     }
 
-    oDecrypt(item: any, tableBuilder?: ITableBuilder<any, string>) {
+    oDecrypt(item: any, tableBuilder?: ITableBuilder<any, any>) {
         if (!tableBuilder)
             return item;
         tableBuilder.props.filter(x => x.encryptionKey).forEach(x => {
@@ -127,7 +212,7 @@ class Functions {
                 throw "TableName cannot be null, This item could not be saved"
             else (item as any).tableName = tableName;
 
-        return (item as any) as IBaseModule<D>;
+        return (item as any) as IId<D>;
     }
 
 
@@ -170,12 +255,13 @@ class Functions {
         return dbKeys.filter(x => Object.keys(item).includes(x));
     }
 
-    createSqlInstaceOfType(prototype: any, item: any) {
+    createSqlInstaceOfType(prototype: any, item?: any) {
         if (!prototype)
             return item;
         const x = Object.create(prototype);
-        for (const key in item)
-            x[key] = item[key]
+        if (item)
+            for (const key in item)
+                x[key] = item[key]
         return x;
     }
 

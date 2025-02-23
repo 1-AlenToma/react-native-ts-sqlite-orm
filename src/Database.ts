@@ -1,5 +1,4 @@
 import {
-  IBaseModule,
   IWatcher,
   IDatabase,
   Operation,
@@ -11,34 +10,59 @@ import {
   IId,
   Query,
   IDataBaseExtender,
-  DatabaseDrive
+  DatabaseDrive,
+  IDbSet
 } from "./sql.wrapper.types";
 import { TableBuilder } from "./TableStructor";
 import BulkSave from "./BulkSave";
 import UseQuery from "./hooks/useQuery";
 import QuerySelector, { IQuerySelector, IReturnMethods } from "./QuerySelector";
 import { createQueryResultType, Functions } from "./UsefullMethods";
-
-export class ORMDataBase<D extends string> implements IDatabase<D> {
-  private db: IDatabase<D>;
+import { DbSet } from "./DbSet";
+import Table from "./Table";
+enum test {
+  "Chapters" = "Chapters"
+}
+export abstract class ORMDataBase<D extends string> implements IDatabase<D> {
+  private db: Database<D>;
   constructor(
-    databaseTables: ITableBuilder<any, D>[],
     getDatabase: () => Promise<DatabaseDrive>,
     onInit?: (database: IDatabase<D>) => Promise<void>,
     disableLog?: boolean) {
-    this.db = new Database<D>(databaseTables, getDatabase, onInit, disableLog) as IDatabase<D>;
+    this.db = new Database<D>(getDatabase, onInit, disableLog);
   }
 
-  useQuery<T extends IId<D>>(tableName: D, query: Query | IReturnMethods<T, D> | (() => Promise<T[]>),
-   onDbItemsChanged?: (items: T[]) => T[]) {
-    return this.db.useQuery(tableName, query, onDbItemsChanged)
+  /**
+   * 
+   * @returns mark the probs as dbSet
+   */
+  DbSet<T extends IId<D>>(item: typeof Table<D>) {
+    try {
+
+      let instanse = Functions.createSqlInstaceOfType(item.prototype) as Table<D>;
+      let config = instanse.config();
+      if (config == undefined)
+        throw "each dbSet must containes TableBuilder, eg result from config methods";
+      this.db.addTable(config);
+      return new DbSet(config.tableName, this as any) as any as IDbSet<T, D>;
+    } catch (e) {
+      console.error(e)
+      throw e;
+    }
   }
+
+  useQuery<T extends IId<D>>(tableName: D, query: Query | IReturnMethods<T, D> | (() => Promise<T[]>), onDbItemsChanged?: (items: T[]) => T[]) {
+    return this.db.useQuery(tableName, query as any, onDbItemsChanged)
+  }
+  get isClosed() {
+    return this.db.isClosed;
+  }
+
   disableWatchers() { return this.db.disableWatchers() };
   enableWatchers() { return this.db.enableWatchers(); }
   disableHooks() { return this.db.disableHooks(); }
   enableHooks() { return this.db.enableHooks(); }
-  bulkSave<T extends IBaseModule<D>>(tabelName: D) { return this.db.bulkSave(tabelName); }
-  isClosed?: boolean;
+  bulkSave<T extends IId<D>>(tabelName: D) { return this.db.bulkSave(tabelName); }
   tryToClose() { return this.db.tryToClose(); }
   close() { return this.db.close(); }
   beginTransaction() { return this.db.beginTransaction(); }
@@ -46,7 +70,7 @@ export class ORMDataBase<D extends string> implements IDatabase<D> {
   rollbackTransaction() { return this.db.rollbackTransaction(); }
   startRefresher(ms: number) { return this.startRefresher(ms); }
   allowedKeys(tableName: D) { return this.db.allowedKeys(tableName); }
-  asQueryable<T extends IId<D>>(item: IBaseModule<D> | IId<D>, tableName?: D) { return this.db.asQueryable<T>(item, tableName); }
+  asQueryable<T extends IId<D>>(item: IId<D> | IId<D>, tableName?: D) { return this.db.asQueryable<T>(item, tableName); }
   watch<T extends IId<D>>(tableName: D) { return this.watch(tableName); }
   querySelector<T extends IId<D>>(tabelName: D) { return this.db.querySelector<T>(tabelName); }
   find(query: string, args?: any[], tableName?: D) { return this.db.find(query, args, tableName); }
@@ -56,7 +80,7 @@ export class ORMDataBase<D extends string> implements IDatabase<D> {
   execute(query: string, args?: any[]) { return this.db.execute(query, args); }
   dropTables() { return this.db.dropTables(); }
   setUpDataBase(forceCheck?: boolean) { return this.db.setUpDataBase(); }
-  tableHasChanges<T extends IBaseModule<D>>(item: ITableBuilder<T, D>) { return this.db.tableHasChanges<T>(item); }
+  tableHasChanges<T extends IId<D>>(item: ITableBuilder<T, D>) { return this.db.tableHasChanges<T>(item); }
   executeRawSql(queries: Query[]) { return this.db.executeRawSql(queries); }
   migrateNewChanges() { return this.db.migrateNewChanges(); }
 
@@ -89,7 +113,7 @@ class Database<D extends string>
   implements IDatabase<D> {
   private mappedKeys: Map<D, string[]>;
   private dataBase: () => Promise<DatabaseDrive>;
-  public tables: TableBuilder<any, D>[];
+  public tables: TableBuilder<any, D>[] = [];
   private timeout: any = undefined;
   private static dbIni: boolean = false;
   private onInit?: (
@@ -108,7 +132,6 @@ class Database<D extends string>
   private tempStore: TempStore<D>[];
   private timeStamp: Date | number = new Date();
   constructor(
-    databaseTables: ITableBuilder<any, D>[],
     getDatabase: () => Promise<DatabaseDrive>,
     onInit?: (database: IDatabase<D>) => Promise<void>,
     disableLog?: boolean
@@ -133,18 +156,30 @@ class Database<D extends string>
       this.isOpen = true;
       return this.db ?? (await getDatabase());
     };
-    this.tables = databaseTables as TableBuilder<any, D>[];
+    //   this.tables = databaseTables as TableBuilder<any, D>[];
   }
 
-  private log(...items: any[]) {
+  addTable(table: ITableBuilder<any, D>) {
+    if (!this.tables.find(x => x.tableName == table.tableName)) {
+      this.info("adding", table.tableName)
+      this.tables.push(table as any)
+      let items = Functions.reorderTables(this.tables as any);
+      if (items.length == this.tables.length){
+        this.tables = items;
+        this.info("Sorting table tree, to ", items.map(x=> x.tableName))
+      }
+    }
+  }
+
+  public log(...items: any[]) {
     if (!this.disableLog) console.log(items);
   }
 
-  private error(...items: any[]) {
-    console.error(items);
+  public error(...items: any[]) {
+    console.error("SQLError:", items);
   }
 
-  private info(...items: any[]) {
+  public info(...items: any[]) {
     if (!this.disableLog) console.info(items);
   }
 
@@ -187,7 +222,7 @@ class Database<D extends string>
   }
 
   private AddToTempStore(
-    items: IBaseModule<D>[],
+    items: IId<D>[],
     operation: SOperation,
     subOperation?: Operation,
     tableName?: D,
@@ -250,7 +285,7 @@ class Database<D extends string>
   }
 
   public async triggerWatch<
-    T extends IBaseModule<D>
+    T extends IId<D>
   >(
     items: T | T[],
     operation: SOperation,
@@ -350,7 +385,7 @@ class Database<D extends string>
   }
 
   private localSave<T>(
-    item?: IBaseModule<D>,
+    item?: IId<D>,
     insertOnly?: Boolean,
     tableName?: D,
     saveAndForget?: boolean
@@ -436,7 +471,7 @@ class Database<D extends string>
           ) {
             const lastItem =
               (await this.selectLastRecord<
-                IBaseModule<D>
+                IId<D>
               >(item)) ?? item;
             item.id = lastItem.id;
           }
@@ -455,23 +490,16 @@ class Database<D extends string>
     ) as Promise<T | undefined>;
   }
 
-  private async localDelete(
-    items: IBaseModule<D>[],
-    tableName: string
-  ) {
-    var q = `DELETE FROM ${tableName} WHERE id IN (${items
-      .map(x => "?")
-      .join(",")})`;
-    await this.execute(
-      q,
-      items.map(x => x.id)
-    );
+  private async localDelete(items: IId<D>[], tableName: string) {
+    await Functions.executeContraineDelete(tableName, this as any, `WHERE id IN (${items.map(x => x.id).join(",")})`, [])
+    var q = `DELETE FROM ${tableName} WHERE id IN (${items.map(x => "?").join(",")})`;
+    await this.execute(q, items.map(x => x.id));
   }
 
-  private async getUique(item: IBaseModule<D>) {
+  private async getUique(item: IId<D>) {
     if (item.id != undefined && item.id > 0)
       return Functions.single(
-        await this.where<IBaseModule<D>>(
+        await this.where<IId<D>>(
           item.tableName,
           { id: item.id }
         )
@@ -508,7 +536,7 @@ class Database<D extends string>
     if (!addedisUnique) return undefined;
 
     return Functions.single(
-      await this.where<IBaseModule<D>>(
+      await this.where<IId<D>>(
         item.tableName,
         filter
       )
@@ -516,7 +544,7 @@ class Database<D extends string>
   }
 
   private async selectLastRecord<T>(
-    item: IBaseModule<D>
+    item: IId<D>
   ) {
     this.info("Executing SelectLastRecord... ");
     if (!item.tableName) {
@@ -711,20 +739,14 @@ class Database<D extends string>
     return watcher;
   }
 
-  public async asQueryable<T extends IId<D>>(
-    item: IId<D> | IBaseModule<D>,
-    tableName?: D
-  ) {
+  public async asQueryable<T extends IId<D>>(item: IId<D>, tableName?: D) {
     Functions.validateTableName(item, tableName);
     var db = this as IDatabase<D>;
-    return await createQueryResultType<T, D>(
-      item as any,
-      db
-    );
+    return await createQueryResultType<T, D>(item as any, db as IDataBaseExtender<D>);
   }
 
   public querySelector<T extends IId<D>>(tableName: D) {
-    return new QuerySelector(tableName, this) as IQuerySelector<T, D>;
+    return new QuerySelector<T, D>(tableName, this) as IQuerySelector<T, D>;
   }
 
   public async save<T extends IId<D>>(
@@ -873,7 +895,7 @@ class Database<D extends string>
         });
         return item;
       };
-      var items = [] as IBaseModule<D>[];
+      var items = [] as IId<D>[];
 
       for (let item of result as any[]) {
         if (tableName) item.tableName = tableName;
@@ -991,16 +1013,7 @@ class Database<D extends string>
   };
 
   async migrateNewChanges() {
-    const dbType = (columnType: ColumnType) => {
-      if (
-        columnType == "Boolean" ||
-        columnType == "Number"
-      )
-        return "INTEGER";
-      if (columnType == "Decimal") return "REAL";
-      if (columnType == "BLOB") return "BLOB";
-      return "TEXT";
-    };
+
     let sqls: any[] = [];
     for (var table of this.tables) {
       this.log(
@@ -1032,7 +1045,7 @@ class Database<D extends string>
       });
 
       aColumns.forEach(x => {
-        sqls.push(`ALTER TABLE ${table.tableName} ADD COLUMN ${x.columnName.toString()} ${dbType(x.columnType)}`);
+        sqls.push(`ALTER TABLE ${table.tableName} ADD COLUMN ${x.columnName.toString()} ${Functions.dbType(x.columnType)}${Functions.dbDefaultValue(x.columnType, x.defaultValue)}`);
       });
     }
     this.log(`migrating`);
@@ -1069,32 +1082,18 @@ class Database<D extends string>
     try {
       if (!Database.dbIni || forceCheck) {
         await this.beginTransaction();
-        const dbType = (
-          columnType: ColumnType
-        ) => {
-          if (
-            columnType == "Boolean" ||
-            columnType == "Number"
-          )
-            return "INTEGER";
-          if (columnType == "Decimal")
-            return "REAL";
-          if (columnType == "BLOB") return "BLOB";
-          return "TEXT";
-        };
         this.log(`dbIni= ${Database.dbIni}`);
         this.log(`forceCheck= ${forceCheck}`);
         this.log(
           "initilize database table setup"
         );
+
+
+
         for (var table of this.tables) {
           var query = `CREATE TABLE if not exists ${table.tableName} (`;
           table.props.forEach((col, index) => {
-            query += `${col.columnName.toString()} ${dbType(
-              col.columnType
-            )} ${!col.isNullable ? "NOT NULL" : ""
-              } ${col.isPrimary ? "UNIQUE" : ""
-              },\n`;
+            query += `${col.columnName.toString()} ${Functions.dbType(col.columnType)} ${!col.isNullable ? "NOT NULL" : ""} ${col.isPrimary ? "UNIQUE" : ""}${Functions.dbDefaultValue(col.columnType, col.defaultValue)},\n`;
           });
           table.props
             .filter(x => x.isPrimary === true)

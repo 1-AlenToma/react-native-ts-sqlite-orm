@@ -68,7 +68,13 @@ export type ColumnType =
 export type NonFunctionPropertyNames<T> = {
   [K in keyof T]: T[K] extends Function
   ? never
-  : K;
+  : T[K] extends object ? never : K
+}[keyof T];
+
+export type ObjectPropertyNamesNames<T> = {
+  [K in keyof T]: T[K] extends (object)
+  ? T[K] extends Function ? never : K
+  : never;
 }[keyof T];
 
 export interface ColumnProps<T, D extends string> {
@@ -79,11 +85,37 @@ export interface ColumnProps<T, D extends string> {
   isAutoIncrement?: boolean;
   isUnique?: boolean;
   encryptionKey?: string;
+  defaultValue?: string | boolean | number;
 }
 
 export type ITableBuilder<T, D extends string> = {
   readonly props: ReadonlyArray<ColumnProps<T, D>>;
   readonly tableName: D;
+  readonly children: ReadonlyArray<IChildLoader<D>>;
+  readonly constrains: ReadonlyArray<{
+    columnName: keyof T;
+    contraintTableName: D;
+    contraintColumnName: any;
+  }>;
+
+  /**
+   * add the prop so you could load it in querySelector load method
+   * @param prop 
+   * @param tableName 
+   * @param foreignkey 
+   * @param parentIdKey 
+   */
+  hasMany<C extends IId<D>>(prop: ObjectPropertyNamesNames<T>, tableName: D, foreignkey: NonFunctionPropertyNames<C>, idProp?: NonFunctionPropertyNames<T>): ITableBuilder<T, D>;
+
+  /**
+   * add the prop so you could load it in querySelector load method
+   * @param prop 
+   * @param tableName 
+   * @param foreignkey 
+   * @param parentIdKey 
+   */
+  hasParent<P extends IId<D>>(prop: ObjectPropertyNamesNames<T>, tableName: D, foreignkey: NonFunctionPropertyNames<T>, parentIdKey?: NonFunctionPropertyNames<P>): ITableBuilder<T, D>;
+
   /**
    * column can contain nullable value
    */
@@ -174,20 +206,15 @@ class Test {
   ) => ITableBuilder<T, D>;
 };
 
-export class IId<D extends string> {
+export abstract class IId<D extends string> {
   public id: number;
-  constructor(id?: number) {
-    this.id = id ?? 0;
-  }
-}
-
-export class IBaseModule<D extends string> extends IId<D> {
   public tableName: D;
   constructor(tableName: D, id?: number) {
-    super(id);
+    this.id = id ?? 0;
     this.tableName = tableName;
   }
 }
+
 
 export type Operation = "UPDATE" | "INSERT";
 export type SOperation =
@@ -215,12 +242,15 @@ export type IDataBaseExtender<D extends string> =
   {
     tables: ITableBuilder<any, D>[];
     dbTable: ITableBuilder<any, D>[];
-    triggerWatch: <T extends IBaseModule<D>>(
+    triggerWatch: <T extends IId<D>>(
       items: T | T[],
       operation: SOperation,
       subOperation?: Operation,
       tableName?: D
     ) => Promise<void>;
+    log: (...items: any[]) => void;
+    info: (...items: any[]) => void;
+    error: (...items: any[]) => void;
   } & IDatabase<D>;
 
 
@@ -230,7 +260,7 @@ export type TempStore<D extends string> = {
   operation: SOperation;
   subOperation?: Operation;
   tableName: D;
-  items: IBaseModule<D>[];
+  items: IId<D>[];
   identifier?: WatchIdentifier;
 };
 
@@ -283,22 +313,30 @@ export interface IQuaryResult<D extends string> {
   children: IChildLoader<D>[];
 }
 
-export type IQueryResultItem<
-  T,
-  D extends string
-> = T & {
-
-  saveChanges: () => Promise<
-    IQueryResultItem<T, D>
-  >;
+export type IQueryResultItem<T, D extends string> = T & {
+  readonly tableName: D;
+  id: number;
+  saveChanges: () => Promise<IQueryResultItem<T, D>>;
   delete: () => Promise<void>;
-  update: (
-    ...keys: NonFunctionPropertyNames<T>[]
-  ) => Promise<void>;
+  update: (...keys: NonFunctionPropertyNames<T>[]) => Promise<void>;
+  load: (prop: ObjectPropertyNamesNames<T>) => Promise<void>;
 };
+
+export interface IDbSet<T extends IId<D>, D extends string> {
+  save: (...items: T[]) => Promise<void>;
+  delete: (...items: T[]) => Promise<void>;
+  query: IQuerySelector<T, D>;
+  byId: (id: number) => Promise<IQueryResultItem<T, D> | undefined>;
+  getAll: () => Promise<IQueryResultItem<T, D>[]>;
+  bulkSave: () => Promise<BulkSave<T, D>>;
+  watch: () => IWatcher<T, D>;
+  useQuery: (query: | Query | IReturnMethods<T, D> | (() => Promise<T[]>)) =>
+    readonly [IQueryResultItem<T, D>[], boolean, () => Promise<void>, IDatabase<D>]
+}
 
 
 export interface IDatabase<D extends string> {
+
   /**
    * This is a hook you could use in a component
    */
@@ -307,12 +345,7 @@ export interface IDatabase<D extends string> {
     query: | Query | IReturnMethods<T, D>
       | (() => Promise<T[]>),
     onDbItemsChanged?: (items: T[]) => T[]
-  ) => readonly [
-    IQueryResultItem<T, D>[],
-    boolean,
-    () => Promise<void>,
-    IDatabase<D>
-  ]
+  ) => readonly [IQueryResultItem<T, D>[], boolean, () => Promise<void>, IDatabase<D>];
 
   /**
    * Freeze all watchers, this is usefull when for example doing many changes to the db
@@ -339,7 +372,7 @@ export interface IDatabase<D extends string> {
    * BulkSave object
    * This will only watchers.onBulkSave
    */
-  bulkSave: <T extends IBaseModule<D>>(
+  bulkSave: <T extends IId<D>>(
     tabelName: D
   ) => Promise<BulkSave<T, D>>;
 
@@ -382,7 +415,7 @@ export interface IDatabase<D extends string> {
    * convert json to IQueryResultItem object, this will add method as saveChanges, update and delete methods to an object
    */
   asQueryable: <T extends IId<D>>(
-    item: IId<D> | IBaseModule<D>,
+    item: IId<D>,
     tableName?: D
   ) => Promise<IQueryResultItem<T, D>>;
   watch: <T extends IId<D>>(
@@ -405,7 +438,7 @@ export interface IDatabase<D extends string> {
     query: string,
     args?: any[],
     tableName?: D
-  ) => Promise<IBaseModule<D>[]>;
+  ) => Promise<IId<D>[]>;
   /**
    * trigger save, update will depend on id and unique columns
    */
@@ -446,7 +479,7 @@ export interface IDatabase<D extends string> {
   /**
    * find out if there some changes between object and db table
    */
-  tableHasChanges: <T extends IBaseModule<D>>(
+  tableHasChanges: <T extends IId<D>>(
     item: ITableBuilder<T, D>
   ) => Promise<boolean>;
   /**

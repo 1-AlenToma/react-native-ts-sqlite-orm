@@ -1,10 +1,14 @@
 import { Database, DatabaseDrive } from "react-native-ts-sqlite-orm";
-import { TableNames, Chapters, DetaliItems } from "./dbModols";
+import { TableNames, Chapters, DetaliItems, ChaptersChildren } from "./dbModols";
 import * as SQLite from 'expo-sqlite';
 
 export default class repository extends Database<TableNames> {
+    readonly Chapters = this.DbSet<Chapters>(Chapters);
+    readonly ChaptersChildren = this.DbSet<ChaptersChildren>(ChaptersChildren);
+    readonly DetaliItems = this.DbSet<DetaliItems>(DetaliItems);
+    
     constructor() {
-        super([DetaliItems.tb, Chapters.tb], async () => {
+        super(async () => {
             let db = await SQLite.openDatabaseAsync("test.db");
             let driver: DatabaseDrive = {
                 close: async () => await db.closeAsync(),

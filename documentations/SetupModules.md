@@ -20,12 +20,17 @@ export class Parent extends Table<TableNames>{
    this.children = [];
  }
   
-  // This method will return the table setup that we will be using later on in `repository`
-  static tb = this.TableBuilder<Parent, TableNames>("Parents").
+  // This is an abstract methods that must be implemented
+  // This method will return the table setup that Database will be using later.
+  config(){ 
+    return this.TableBuilder<Parent, TableNames>("Parents").
     column("name").
     objectPrototype(Parent.prototype).
     //unique acts as an Id too as the library will chack if there exist an item with the same field value and will update instead.
-    column("email").unique;
+    column("email").unique.
+    // this is so you could load its content by load methods that exist in table
+    hasMany<Child>("children", "Childrens", "parentId")
+  }
 }
 
 ```
@@ -36,21 +41,25 @@ And then we have `Child`
 export class Child extends Table<TableNames>{
  someField: string;
  parentId?: number;
+ parent?: Parent;
  constructor(someField:string, parentId?: number ){
    super("Childrens");
    this.someField = someField;
    this.parentId = parentId;
  }
   
-static tb = this.TableBuilder<Child, TableNames>("Childrens").
+config()  {
+  return this.TableBuilder<Child, TableNames>("Childrens").
     column("someField").
     column("parentId").number.nullable.
+    hasParent<DetaliItems>("parent", "Parents", "parentId").
     constrain<Parent>("parentId", "Parents", "id").
     onItemCreate(x=> {
            var child= new Child(item.someField, item.parentId);
            child.id= item.id;
            return child;
     });
+  }
 }
 ```
 

@@ -2,10 +2,13 @@ import {
   ColumnType,
   ITableBuilder,
   ColumnProps,
-  NonFunctionPropertyNames
+  NonFunctionPropertyNames,
+  IId,
+  IChildLoader,
+  ObjectPropertyNamesNames
 } from "./sql.wrapper.types";
 
-export class TableBuilder<T, D extends string> implements ITableBuilder<T, D>{
+export class TableBuilder<T, D extends string> implements ITableBuilder<T, D> {
   props: ColumnProps<T, D>[];
   constrains: {
     columnName: keyof T;
@@ -15,6 +18,7 @@ export class TableBuilder<T, D extends string> implements ITableBuilder<T, D>{
   tableName: D;
   itemCreate?: (item: T) => T;
   typeProptoType?: any;
+  children: IChildLoader<D>[] = [];
   constructor(tableName: D) {
     this.props = [];
     this.tableName = tableName;
@@ -22,7 +26,7 @@ export class TableBuilder<T, D extends string> implements ITableBuilder<T, D>{
     // added default id column
     this.column("id" as any).number.primary.autoIncrement;
   }
-  
+
 
   colType(colType: ColumnType) {
     if (colType !== "String" && this.getLastProp.encryptionKey) {
@@ -31,7 +35,36 @@ export class TableBuilder<T, D extends string> implements ITableBuilder<T, D>{
       throw ms;
     }
     this.getLastProp.columnType = colType;
-    return this as ITableBuilder<T,D>;
+    return this as ITableBuilder<T, D>;
+  }
+
+  hasMany<C extends IId<D>>(prop: ObjectPropertyNamesNames<T>, tableName: D, foreignkey: NonFunctionPropertyNames<C>, idProp?: NonFunctionPropertyNames<T>) {
+    this.children.push({
+      parentTable: this.tableName,
+      parentProperty: (idProp ?? "id") as string,
+      childProperty: foreignkey as string,
+      childTableName: tableName as string,
+      isArray: true,
+      assignTo: prop
+    } as IChildLoader<D>);
+    return this;
+  }
+
+  hasParent<P extends IId<D>>(prop: ObjectPropertyNamesNames<T>, tableName: D, foreignkey: NonFunctionPropertyNames<T>, parentIdKey?: NonFunctionPropertyNames<P>) {
+    this.children.push({
+      parentTable: this.tableName,
+      parentProperty: foreignkey as string,
+      childProperty:  (parentIdKey ?? "id"),
+      childTableName: tableName,
+      isArray: false,
+      assignTo: prop
+    } as IChildLoader<D>);
+    return this;
+  }
+
+  defaultValue(defaultValue: string | boolean | number) {
+    this.getLastProp.defaultValue = defaultValue;
+    return this as ITableBuilder<T, D>;
   }
 
   get blob() {
@@ -64,22 +97,22 @@ export class TableBuilder<T, D extends string> implements ITableBuilder<T, D>{
 
   get nullable() {
     this.getLastProp.isNullable = true;
-    return this as ITableBuilder<T,D>;
+    return this as ITableBuilder<T, D>;
   }
 
   get primary() {
     this.getLastProp.isPrimary = true;
-    return this as ITableBuilder<T,D>;
+    return this as ITableBuilder<T, D>;
   }
 
   get autoIncrement() {
     this.getLastProp.isAutoIncrement = true;
-    return this as ITableBuilder<T,D>;
+    return this as ITableBuilder<T, D>;
   }
 
   get unique() {
     this.getLastProp.isUnique = true;
-    return this as ITableBuilder<T,D>;
+    return this as ITableBuilder<T, D>;
   }
 
   get getLastProp() {
@@ -90,7 +123,7 @@ export class TableBuilder<T, D extends string> implements ITableBuilder<T, D>{
 
   objectPrototype(objectProptoType: any) {
     this.typeProptoType = objectProptoType;
-    return this as ITableBuilder<T,D>;
+    return this as ITableBuilder<T, D>;
   }
 
   encrypt(encryptionKey: string) {
@@ -105,12 +138,12 @@ export class TableBuilder<T, D extends string> implements ITableBuilder<T, D>{
     }
     this.getLastProp.encryptionKey =
       encryptionKey;
-    return this as ITableBuilder<T,D>;
+    return this as ITableBuilder<T, D>;
   }
 
   onItemCreate(func: (item: T) => T) {
     this.itemCreate = func;
-    return this as ITableBuilder<T,D>;
+    return this as ITableBuilder<T, D>;
   }
 
   column(colName: keyof T) {
@@ -119,7 +152,7 @@ export class TableBuilder<T, D extends string> implements ITableBuilder<T, D>{
       this.props[this.props.findIndex(x => x.columnName == colName)] = col;
     else
       this.props.push(col);
-    return this as ITableBuilder<T,D>;
+    return this as ITableBuilder<T, D>;
   }
 
   constrain<E extends object>(
@@ -132,7 +165,7 @@ export class TableBuilder<T, D extends string> implements ITableBuilder<T, D>{
       contraintColumnName,
       contraintTableName
     });
-    return this as ITableBuilder<T,D>;
+    return this as ITableBuilder<T, D>;
   }
 }
 

@@ -5,10 +5,13 @@ That mean when you make changes to your objects and so on, You will notice those
 
 ## Example
 ```ts
-const query= dbContext.querySelector<Parent>("Parents");
+const query= dbContext.Parents.query;
 
 // you could load children and join parentId with Id and assign the result to children
 query.include<Child>("Childrens").column("id", "parentId").toList("children");
+// or if you has already set up hasMany in setup Module then use only
+query.load("children")
+// note method load also exist in Table class so you could skip this now and load only in the desire objects
 
 // Simple Where
 query.where.column(x=> x.id).equalTo(1);

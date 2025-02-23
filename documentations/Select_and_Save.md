@@ -19,8 +19,8 @@ Using the dbcontext to create/update and select data could not be more simpler.
 
 ```ts
 // depending on item `id` and `unique` column `save` will update or insert the item
-var item = await dbContext.save(new Parent("testName", "test@gmail.com"));
-var child = await dbContext.save(new Child("testName",item.id));
+var item = await dbContext.Parents.save(new Parent("testName", "test@gmail.com"));
+var child = await dbContext.Childrens.save(new Child("testName",item.id));
 ```
 
 For selecting the data you have more then one method to do that.
@@ -34,7 +34,7 @@ There is also another way for which you can use `querySelector` builder
 
 See [querySelector](https://github.com/AlenToma/react-native-ts-sqlite-orm/blob/main/documentations/querySelector.md) for more info
 ```ts
-   var item = await dbContext.querySelector<Parent>("Parents").where
+   var item = await dbContext.Parents.query.where
    .column(x=> x.name)
    .equalTo("testName")
    .firstOrDefault();
@@ -45,16 +45,18 @@ See [querySelector](https://github.com/AlenToma/react-native-ts-sqlite-orm/blob/
 You could also use `querySelector` builder to load children.
 
 ```ts
-      var item = await dbContext.querySelector<Parent>("Parents").include<Child>("Childrens").column("id", "parentId").toList("children").where
+      var item = await dbContext.Parents.query.where.load("children")
      .start.column(x=> x.name).in(["name", "testName"]).end
      .or
      .start.column(x=> x.email).contains("test@").end
      .toList();
+      // or you could skip load in the query and only call it on desires items
+     item[0].load("children");
 ```
 
 You could also use `querySelector` to delete items
 ```ts
-      await dbContext.query<Parent>("Parents")
+      await dbContext.Parents.query.where
      .start.column(x=> x.name).in(["name", "testName"]).end
      .or
      .start.column(x=> x.email).Contains("test@").end.delete();

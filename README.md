@@ -69,7 +69,7 @@ export interface IDatabase<D extends string> {
    * BulkSave object
    * This will only watchers.onBulkSave
    */
-  bulkSave: <T extends IBaseModule<D>>(
+  bulkSave: <T extends IId<D>>(
     tabelName: D
   ) => Promise<BulkSave<T, D>>;
 
@@ -112,7 +112,7 @@ export interface IDatabase<D extends string> {
    * convert json to IQueryResultItem object, this will add method as saveChanges, update and delete methods to an object
    */
   asQueryable: <T extends IId<D>>(
-    item: IId<D> | IBaseModule<D>,
+    item: IId<D>,
     tableName?: D
   ) => Promise<IQueryResultItem<T, D>>;
   watch: <T extends IId<D>>(
@@ -135,7 +135,7 @@ export interface IDatabase<D extends string> {
     query: string,
     args?: any[],
     tableName?: D
-  ) => Promise<IBaseModule<D>[]>;
+  ) => Promise<IId<D>[]>;
   /**
    * trigger save, update will depend on id and unique columns
    */
@@ -176,7 +176,7 @@ export interface IDatabase<D extends string> {
   /**
    * find out if there some changes between object and db table
    */
-  tableHasChanges: <T extends IBaseModule<D>>(
+  tableHasChanges: <T extends IId<D>>(
     item: ITableBuilder<T, D>
   ) => Promise<boolean>;
   /**
