@@ -99,7 +99,7 @@ export type ITableBuilder<T, D extends string> = {
   }>;
 
   /**
-   * add the prop so you could load it in querySelector load method
+   * add the prop so you could load it in querySelector or item load method
    * @param prop 
    * @param tableName 
    * @param foreignkey 
@@ -107,8 +107,20 @@ export type ITableBuilder<T, D extends string> = {
    */
   hasMany<C extends IId<D>>(prop: ObjectPropertyNamesNames<T>, tableName: D, foreignkey: NonFunctionPropertyNames<C>, idProp?: NonFunctionPropertyNames<T>): ITableBuilder<T, D>;
 
+  
   /**
-   * add the prop so you could load it in querySelector load method
+   * add the prop so you could load it in querySelector or item load method
+   * @param prop 
+   * @param tableName 
+   * @param foreignkey 
+   * @param parentIdKey 
+   */
+  hasOne<C extends IId<D>>(prop: ObjectPropertyNamesNames<T>, tableName: D, foreignkey: NonFunctionPropertyNames<C>, idProp?: NonFunctionPropertyNames<T>): ITableBuilder<T, D>;
+
+
+
+  /**
+   * add the prop so you could load it in querySelector or item load method
    * @param prop 
    * @param tableName 
    * @param foreignkey 

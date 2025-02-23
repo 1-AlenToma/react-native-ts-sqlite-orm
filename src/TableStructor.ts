@@ -50,6 +50,18 @@ export class TableBuilder<T, D extends string> implements ITableBuilder<T, D> {
     return this;
   }
 
+  hasOne<C extends IId<D>>(prop: ObjectPropertyNamesNames<T>, tableName: D, foreignkey: NonFunctionPropertyNames<C>, idProp?: NonFunctionPropertyNames<T>) {
+    this.children.push({
+      parentTable: this.tableName,
+      parentProperty: (idProp ?? "id") as string,
+      childProperty: foreignkey as string,
+      childTableName: tableName as string,
+      isArray: false,
+      assignTo: prop
+    } as IChildLoader<D>);
+    return this;
+  }
+
   hasParent<P extends IId<D>>(prop: ObjectPropertyNamesNames<T>, tableName: D, foreignkey: NonFunctionPropertyNames<T>, parentIdKey?: NonFunctionPropertyNames<P>) {
     this.children.push({
       parentTable: this.tableName,

@@ -1,7 +1,7 @@
 # Modules Setup
 The first step is to create and configure your modules.
 
-For this example, we will create tow `classes` `Parent` and `Child`
+For this example, we will create two `classes` `Parent` and `Child`
 
 ```ts
 import  { Table, ColumnType, IQueryResultItem } from 'react-native-ts-sqlite-orm'
@@ -69,6 +69,12 @@ With this we are done with our modules.
 
 
 ## Properties
+
+`hasMany` assign an object property so you could load it later by simple calling .load("children"), see [querySelector](https://github.com/1-AlenToma/react-native-ts-sqlite-orm/blob/main/documentations/querySelector.md) for more info
+
+`hasOne` same as hasMany except it will only load as an object and not array, eg select top 1
+
+`hasParent` same as hasMany except for parent object. see [querySelector](https://github.com/1-AlenToma/react-native-ts-sqlite-orm/blob/main/documentations/querySelector.md) for more info
 
 `json` the column is a json(string), the lib will stringify and parse the column when called. this is so you could save an objects
 
