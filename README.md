@@ -25,5 +25,8 @@ see [dbContexts](https://github.com/1-AlenToma/react-native-ts-sqlite-orm/blob/m
 * [useQuery](https://github.com/1-AlenToma/react-native-ts-sqlite-orm/blob/main/documentations/useQuery.md)
 * [querySelector](https://github.com/1-AlenToma/react-native-ts-sqlite-orm/blob/main/documentations/querySelector.md)
 
+
+## Example Download the example and read the docs to fully understands how it works.
+
 Please report any issues that you find so we could make this lib even better.
 
