@@ -13,6 +13,7 @@ const database = {
 } as any
 
 const item = {
+    tableName: "DetaliItems",
     id: 1,
     title: "this is a test",
     novel: "testNovel"
@@ -125,7 +126,7 @@ test("DeleteWithEncryptions", function () {
     console.log("DeleteWithEncryptions");
     var q = new QuerySelector<DetaliItems, TableNames>("DetaliItems", database) as any as IQuerySelector<DetaliItems, TableNames>;
     const sql = (q.where.start.column(x => x.image).not.in([item.novel]).end.getSql("DELETE"))
-    
+
     sql.sql.trim().should.eql("DELETE FROM DetaliItems WHERE ( image NOT IN( ? ) )")
     sql.args[0].should.eql("#dbEncrypted&0eUCHRbFc8mdr94/KJYKOA==")
     sql.args.length.should.eql(1)
@@ -401,10 +402,10 @@ test("Select case", function () {
     const sql = q.leftJoin<Chapters, "b">("Chapters", "b")
         .column(x => x.a.id)
         .equalTo(x => x.b.detaliItem_Id)
-        .where.case.when.column(x=> x.a.id).equalTo(2).then.value("hahaha").else.value("hohoho").endCase.not.in(["hohoho"]).and
+        .where.case.when.column(x => x.a.id).equalTo(2).then.value("hahaha").else.value("hohoho").endCase.not.in(["hohoho"]).and
         .column(x => x.a.id)
         .lessThan(15).and.start.concat("||", x => x.a.title, "-", x => x.a.id).end.endsWith("1").and.column(x => x.a.title).not.startsWith("?").and.column(x => x.a.novel).not.in(q2.where.column(x => x.id).greaterThan(1).select.columns(x => [x.novel]))
-        .select.columns((x, as) => [as(x.a.title, "setoNaming")]).case("test").when.column(x=> x.a.id).equalTo(2).then.value("hahaha").else.value("hohoho").endCase
+        .select.columns((x, as) => [as(x.a.title, "setoNaming")]).case("test").when.column(x => x.a.id).equalTo(2).then.value("hahaha").else.value("hohoho").endCase
         .getInnerSelectSql()
     sql.trim().should.eql("SELECT a.title as setoNaming , (  CASE WHEN a.id = 2 THEN \'hahaha\' ELSE \'hohoho\' END ) as test FROM DetaliItems as a LEFT JOIN Chapters as b ON  a.id = b.detaliItem_Id WHERE CASE WHEN a.id = 2 THEN \'hahaha\' ELSE \'hohoho\' END NOT IN( \'hohoho\' ) AND a.id < 15 AND ( a.title || \'-\' || a.id ) like \'%1\' AND a.title NOT like \'?%\' AND a.novel NOT IN( SELECT novel FROM DetaliItems WHERE id > 1 )")
     console.log("Select case", q.getInnerSelectSql())

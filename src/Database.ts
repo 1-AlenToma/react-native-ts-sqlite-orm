@@ -2,7 +2,6 @@ import {
   IWatcher,
   IDatabase,
   Operation,
-  ColumnType,
   ITableBuilder,
   SOperation,
   TempStore,
@@ -20,9 +19,6 @@ import QuerySelector, { IQuerySelector, IReturnMethods } from "./QuerySelector";
 import { createQueryResultType, Functions } from "./UsefullMethods";
 import { DbSet } from "./DbSet";
 import Table from "./Table";
-enum test {
-  "Chapters" = "Chapters"
-}
 export abstract class ORMDataBase<D extends string> implements IDatabase<D> {
   private db: Database<D>;
   constructor(

@@ -68,10 +68,7 @@ const UseQuery = <
             tableName
           )) {
             r.push(
-              await createQueryResultType<T, D>(
-                x,
-                dbContext
-              )
+              await createQueryResultType<T, D>(x, dbContext as any)
             );
           }
           dataRef.current = r;
@@ -82,10 +79,7 @@ const UseQuery = <
           >[];
           for (const x of await fn()) {
             r.push(
-              await createQueryResultType<T, D>(
-                x,
-                dbContext
-              )
+              await createQueryResultType<T, D>(x, dbContext as any)
             );
           }
           dataRef.current = r;
@@ -130,7 +124,7 @@ const UseQuery = <
           r.push(
             await createQueryResultType(
               x,
-              dbContext
+              dbContext as any
             )
           );
         }

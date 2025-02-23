@@ -1,5 +1,8 @@
 import TableBuilder from '../TableStructor'
+export type TableNames = 'DetaliItems' | 'Chapters';
+
 export interface DetaliItems {
+    tableName: TableNames;
     id: number;
     title: string;
     image: string;
@@ -12,6 +15,7 @@ export interface DetaliItems {
 }
 
 export interface Chapters {
+    tableName: TableNames;
     id: number;
     chapterUrl: number;
     isViewed?: boolean;
@@ -23,7 +27,7 @@ export interface Chapters {
 }
 
 
-export type TableNames = 'DetaliItems' | 'Chapters';
+
 
 export const tables = [
     TableBuilder<DetaliItems, TableNames>("DetaliItems")
