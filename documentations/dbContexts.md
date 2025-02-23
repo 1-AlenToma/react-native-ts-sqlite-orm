@@ -8,12 +8,11 @@ import {
   openDatabase
 } from "react-native-sqlite-storage";
 export type TableNames = "Parents" | "Childrens";
-const tables = [Parent.tb, Child.tb]
 export default class DbContext extends Database<TableNames> {
     readonly Parents = this.DbSet<Parent>(Parent);
     readonly Childrens = this.DbSet<Child>(Child);
     constructor() {
-        super(tables, async () => {
+        super(async () => {
             let db = await openDatabase("test.db");
             return db;
         });
@@ -26,12 +25,12 @@ For `expo.sqlite`  setup
 import { Database, DatabaseDrive } from "react-native-ts-sqlite-orm";
 import * as SQLite from 'expo-sqlite';
 export type TableNames = "Parents" | "Childrens";
-const tables = [Parent.tb, Child.tb]
+
 export default class DbContext extends Database<TableNames> {
     readonly Parents = this.DbSet<Parent>(Parent);
     readonly Childrens = this.DbSet<Child>(Child);
     constructor() {
-        super(tables, async () => {
+        super(async () => {
             let db = await SQLite.openDatabaseAsync("test.db");
             let driver: DatabaseDrive = {
                 close: async () => await db.closeAsync(),
