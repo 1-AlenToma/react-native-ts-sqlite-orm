@@ -32,7 +32,7 @@ You can use the normal way for which `sqlite`
 
 There is also another way for which you can use `querySelector` builder
 
-See [querySelector](https://github.com/AlenToma/react-native-ts-sqlite-orm/blob/main/documentations/querySelector.md) for more info
+See [querySelector](https://github.com/1-AlenToma/react-native-ts-sqlite-orm/blob/main/documentations/querySelector.md) for more info
 ```ts
    var item = await dbContext.Parents.query.where
    .column(x=> x.name)
@@ -54,11 +54,14 @@ You could also use `querySelector` builder to load children.
      item[0].load("children");
 ```
 
-You could also use `querySelector` to delete items
+You could also use `querySelector` to delete items.
+
+Note that deleting an item will delete all its children herarkie. 
+so each table has constrains to the current object will be deleted etc.
 ```ts
       await dbContext.Parents.query.where
-     .start.column(x=> x.name).in(["name", "testName"]).end
+     .column(x=> x.name).in(["name", "testName"])
      .or
-     .start.column(x=> x.email).Contains("test@").end.delete();
+     .column(x=> x.email).Contains("test@").delete();
 ```
 

@@ -14,7 +14,8 @@ class User extends Table<TableNames>{
       this.password= "secret";
     }
     
-  static tb = this.TableBuilder<User, TableNames>("Users").
+  config(){
+    return this.TableBuilder<User, TableNames>("Users").
     column("name").
     column("password").encrypt("myscret key").
     objectPrototype(User.prototype)
@@ -36,7 +37,7 @@ To be able to search those column, you have tow diffrent ways.
 ### example 1
 ```ts
   // 123 will be encrypted so it could be compare to the value in the database
-  var item = await dbContext.querySelector<User>("Users").column(x=> x.password).EqualTo("123").toList();
+  var item = await dbContext.Users.query.where.column(x=> x.password).EqualTo("123").toList();
 
 ```
 
