@@ -220,7 +220,7 @@ class Test {
 
 export abstract class IId<D extends string> {
   public id: number;
-  public readonly tableName: D;
+  public tableName: D;
   constructor(tableName: D, id?: number) {
     this.id = id ?? 0;
     this.tableName = tableName;
