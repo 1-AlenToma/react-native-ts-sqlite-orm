@@ -29,18 +29,34 @@ export abstract class ORMDataBase<D extends string> implements IDatabase<D> {
     this.db = new Database<D>(getDatabase, onInit, disableLog);
   }
 
+  addTables(...tables: (typeof Table<D>[])) {
+    try {
+      let configs: ITableBuilder<any, D>[] = [];
+      for (let item of tables) {
+        let instanse = Functions.createSqlInstaceOfType(item.prototype) as Table<D>;
+        let config = instanse?.config();
+        if (config == undefined)
+          throw "each dbSet must containes TableBuilder, eg result from config methods";
+        configs.push(config);
+      }
+      this.db.addTables(...configs);
+    } catch (e) {
+      this.db.error(e)
+      throw e;
+    }
+  }
+
   /**
    * 
    * @returns mark the probs as dbSet
    */
   DbSet<T extends IId<D>>(item: typeof Table<D>) {
     try {
-
       let instanse = Functions.createSqlInstaceOfType(item.prototype) as Table<D>;
-      let config = instanse.config();
+      let config = instanse?.config();
       if (config == undefined)
         throw "each dbSet must containes TableBuilder, eg result from config methods";
-      this.db.addTable(config);
+      this.db.addTables(config);
       return new DbSet(config.tableName, this as any) as any as IDbSet<T, D>;
     } catch (e) {
       this.db.error(e)
@@ -153,10 +169,14 @@ class Database<D extends string>
     //   this.tables = databaseTables as TableBuilder<any, D>[];
   }
 
-  addTable(table: ITableBuilder<any, D>) {
-    if (!this.tables.find(x => x.tableName == table.tableName)) {
-      this.info("adding", table.tableName)
-      this.tables.push(table as any)
+  addTables(...tables: ITableBuilder<any, D>[]) {
+    for (let table of tables) {
+      if (!this.tables.find(x => x.tableName == table.tableName)) {
+        this.info("adding", table.tableName)
+        this.tables.push(table as any)
+
+      }
+
       let items = Functions.reorderTables(this.tables as any);
       if (items.length == this.tables.length) {
         this.tables = items;

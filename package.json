@@ -1,6 +1,6 @@
 {
   "name": "react-native-ts-sqlite-orm",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "This is a fully typescript sqlite-ORM-builder",
   "source": "./src/index.ts",
   "main": "./lib/commonjs/index.js",
@@ -38,14 +38,13 @@
   ],
   "scripts": {
     "example": "yarn workspace react-native-ts-sqlite-orm-example",
-    "testjest": "jest",
+    "jest": "jest",
     "typecheck": "tsc",
     "lint": "eslint \"**/*.{js,ts,tsx}\"",
     "clean": "del-cli lib",
     "prepare": "bob build",
     "release": "release-it",
     "build": "tsc & npm run prepare",
-    "test": "mocha lib/commonjs/tests/test_QuerySelectorTest.js",
     "dev": "npm run build & npm run test"
   },
   "keywords": [
@@ -181,7 +180,7 @@
       ],
       [
         "module",
-        { 
+        {
           "esm": true
         }
       ],

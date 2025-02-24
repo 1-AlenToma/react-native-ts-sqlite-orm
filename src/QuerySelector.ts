@@ -1599,31 +1599,17 @@ export default class QuerySelector<
 
   async findOrSave(item: T & IId<D>) {
     const sql = this.getSql("SELECT");
-    (item as any).tableName = this.tableName;
-    var dbItem = Functions.single<any>(
-      await this.database.find(
-        sql.sql,
-        sql.args,
-        this.tableName
-      )
-    );
+    item.tableName = this.tableName;
+    var dbItem = Functions.single<IId<D>>(await this.database.find(sql.sql, sql.args, this.tableName));
+    
     if (!dbItem) {
-      dbItem = Functions.single<any>(
-        await this.database.save<T>(
-          item,
-          false,
-          this.tableName
-        )
-      );
+      dbItem = Functions.single<any>(await this.database.save<T>(item, false, this.tableName));
     }
-    (dbItem as any).tableName = this.tableName;
+
+    dbItem.tableName = this.tableName;
     if (dbItem && this.converter)
       dbItem = this.converter(dbItem);
-    return await createQueryResultType<T, D>(
-      dbItem,
-      this.database,
-      this.children
-    );
+    return await createQueryResultType<T, D>(dbItem, this.database, this.children);
   }
 
   async firstOrDefault() {
@@ -1631,27 +1617,16 @@ export default class QuerySelector<
     let tItem = Functions.single<any>(await this.database.find(item.sql, item.args, this.tableName));
     if (tItem && this.converter)
       tItem = this.converter(tItem);
-    return tItem ? await createQueryResultType<T, D>(tItem, this.database, this.children)
-      : undefined;
+    return tItem ? await createQueryResultType<T, D>(tItem, this.database, this.children) : undefined;
   }
 
   async toList() {
     const sql = this.getSql("SELECT");
     var result = [] as IQueryResultItem<T, D>[];
-    for (var x of await this.database.find(
-      sql.sql,
-      sql.args,
-      this.tableName
-    )) {
+    for (var x of await this.database.find(sql.sql, sql.args, this.tableName)) {
       x.tableName = this.tableName;
       if (this.converter) x = this.converter(x);
-      result.push(
-        await createQueryResultType<T, D>(
-          x,
-          this.database,
-          this.children
-        )
-      );
+      result.push(await createQueryResultType<T, D>(x, this.database, this.children));
     }
     return result;
   }

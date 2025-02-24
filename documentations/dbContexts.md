@@ -34,6 +34,9 @@ export default class DbContext extends Database<TableNames> {
             }
             return driver;
         });
+
+        // Add your other tables here 
+        this.addTables(Users, Person)
     }
 }
 
