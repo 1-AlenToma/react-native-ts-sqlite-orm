@@ -35,7 +35,7 @@ export default class DbContext extends Database<TableNames> {
             return driver;
         });
 
-        // Add your other tables here 
+        // Add your other tables that are not added as `DbSet` here. 
         this.addTables(Users, Person)
     }
 }
