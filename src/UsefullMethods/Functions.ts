@@ -4,10 +4,10 @@ import { ColumnType, IDataBaseExtender, IId, ITableBuilder, Query } from '../sql
 import crypto from 'crypto-js';
 class Functions {
 
-     reorderTables(jsonData: ITableBuilder<any, string>[]) {
+    reorderTables(jsonData: ITableBuilder<any, string>[]) {
         const tableMap = Object.fromEntries(jsonData.map(table => [table.tableName, table]));
         const dependencyGraph = Object.fromEntries(jsonData.map(table => [table.tableName, new Set()]))
-        
+
         // Build dependency graph
         jsonData.forEach(table => {
             (table.constrains || []).forEach(constraint => {
@@ -15,15 +15,15 @@ class Functions {
                 dependencyGraph[table.tableName].add(parentTable);
             });
         });
-        
+
         // Topological sorting using Kahn's Algorithm
         const sortedTables = [];
         const noDependencyTables = jsonData.filter(table => dependencyGraph[table.tableName].size === 0);
-        
+
         while (noDependencyTables.length) {
             const table = noDependencyTables.shift();
             sortedTables.push(table);
-            
+
             jsonData.forEach(otherTable => {
                 if (dependencyGraph[otherTable.tableName].has(table.tableName)) {
                     dependencyGraph[otherTable.tableName].delete(table.tableName);
@@ -33,7 +33,7 @@ class Functions {
                 }
             });
         }
-        
+
         return sortedTables;
     }
 
@@ -297,6 +297,11 @@ class Functions {
 
     single<T>(titems: Array<T> | undefined): T | undefined {
         return titems && titems.length > 0 ? titems[0] : undefined;
+    }
+
+    toArray<T>(item: any) {
+        const items = Array.isArray(item) ? item : [item];
+        return items as T[];
     }
 }
 

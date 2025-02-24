@@ -214,14 +214,8 @@ export default class BulkSave<
           args: []
         });
       await this.dbContext.executeRawSql(qs);
-      const db = this
-        .dbContext as IDataBaseExtender<D>;
-      await db.triggerWatch(
-        [],
-        "onBulkSave",
-        undefined,
-        this.tableName
-      );
+      const db = this.dbContext as IDataBaseExtender<D>;
+      await db.triggerWatch([], "onBulkSave", undefined, this.tableName);
     }
   }
 }

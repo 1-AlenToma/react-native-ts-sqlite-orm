@@ -10,7 +10,8 @@ import {
   Query,
   IDataBaseExtender,
   DatabaseDrive,
-  IDbSet
+  IDbSet,
+  Operations
 } from "./sql.wrapper.types";
 import { TableBuilder } from "./TableStructor";
 import BulkSave from "./BulkSave";
@@ -42,7 +43,7 @@ export abstract class ORMDataBase<D extends string> implements IDatabase<D> {
       this.db.addTable(config);
       return new DbSet(config.tableName, this as any) as any as IDbSet<T, D>;
     } catch (e) {
-      console.error(e)
+      this.db.error(e)
       throw e;
     }
   }
@@ -64,10 +65,10 @@ export abstract class ORMDataBase<D extends string> implements IDatabase<D> {
   beginTransaction() { return this.db.beginTransaction(); }
   commitTransaction() { return this.db.commitTransaction(); }
   rollbackTransaction() { return this.db.rollbackTransaction(); }
-  startRefresher(ms: number) { return this.startRefresher(ms); }
+  startRefresher(ms: number) { return this.db.startRefresher(ms); }
   allowedKeys(tableName: D) { return this.db.allowedKeys(tableName); }
   asQueryable<T extends IId<D>>(item: IId<D> | IId<D>, tableName?: D) { return this.db.asQueryable<T>(item, tableName); }
-  watch<T extends IId<D>>(tableName: D) { return this.watch(tableName); }
+  watch<T extends IId<D>>(tableName: D) { return this.db.watch(tableName); }
   querySelector<T extends IId<D>>(tabelName: D) { return this.db.querySelector<T>(tabelName); }
   find(query: string, args?: any[], tableName?: D) { return this.db.find(query, args, tableName); }
   save<T extends IId<D>>(item: T | T[], insertOnly?: Boolean, tableName?: D, saveAndForget?: boolean) { return this.db.save<T>(item, insertOnly, tableName, saveAndForget); }
@@ -110,11 +111,8 @@ class Database<D extends string>
   private mappedKeys: Map<D, string[]>;
   private dataBase: () => Promise<DatabaseDrive>;
   public tables: TableBuilder<any, D>[] = [];
-  private timeout: any = undefined;
   private static dbIni: boolean = false;
-  private onInit?: (
-    database: IDatabase<D>
-  ) => Promise<void>;
+  private onInit?: (database: IDatabase<D>) => Promise<void>;
   private db?: DatabaseDrive;
   public isClosed?: boolean;
   private isClosing: boolean;
@@ -250,7 +248,7 @@ class Database<D extends string>
         });
       }
     } catch (e) {
-      console.error(e);
+      this.error(e);
     }
   }
 
@@ -290,10 +288,8 @@ class Database<D extends string>
     identifier?: WatchIdentifier
   ) {
     try {
-      this.log("watcher for " + tableName);
-      const tItems = Array.isArray(items)
-        ? items
-        : [items];
+
+      const tItems = Functions.toArray<T>(items)
       var s = Functions.single(tItems);
       if (s && !tableName && s && s.tableName)
         tableName = s.tableName;
@@ -307,6 +303,8 @@ class Database<D extends string>
         );
       }) as Watcher<T, D>[];
 
+      if (w.length > 0)
+        this.log("watcher for " + tableName);
       for (let watcher of w) {
         try {
           if (
@@ -344,10 +342,7 @@ class Database<D extends string>
             watcher.onSave
           ) {
             // this.info("Call Watcher", operation);
-            await watcher.onSave(
-              tItems,
-              subOperation ?? "INSERT"
-            );
+            await watcher.onSave(tItems, subOperation ?? "INSERT");
           }
 
           if (
@@ -366,7 +361,7 @@ class Database<D extends string>
             await watcher.onBulkSave();
           }
         } catch (e) {
-          console.error(
+          this.error(
             "Watchers.Error:",
             operation,
             subOperation,
@@ -376,114 +371,79 @@ class Database<D extends string>
         }
       }
     } catch (e) {
-      console.error("Watchers.Error:", e);
+      this.error("Watchers.Error:", e);
     }
   }
 
-  private localSave<T>(
-    item?: IId<D>,
+  private async localSave<T extends IId<D>>(
+    item?: T,
     insertOnly?: Boolean,
     tableName?: D,
     saveAndForget?: boolean
   ) {
+    if (!item) {
+      return undefined;
+    }
     Functions.validateTableName(item as any, tableName);
-    return new Promise(
-      async (resolve, reject) => {
-        try {
-          if (!item) {
-            reject(undefined);
-            return;
-          }
-          this.log("Executing Save...");
-          const uiqueItem =
-            await this.getUique(item);
-          let table = this.tables.find(
-            x => x.tableName == item.tableName
-          );
-          const keys = Functions.getAvailableKeys(
-            await this.allowedKeys(
-              item.tableName,
-              true
-            ),
-            item
-          );
-          const sOperations = uiqueItem
-            ? "UPDATE"
-            : "INSERT";
-          let query = "";
-          let args = [] as any[];
-          if (uiqueItem) {
-            if (insertOnly) {
-              resolve(item as any);
-              return;
-            }
-            query = `UPDATE ${item.tableName} SET `;
-            keys.forEach((k, i) => {
-              query +=
-                ` ${k}=? ` +
-                (i < keys.length - 1 ? "," : "");
-            });
-            query += " WHERE id=?";
-          } else {
-            query = `INSERT INTO ${item.tableName} (`;
-            keys.forEach((k, i) => {
-              query +=
-                k +
-                (i < keys.length - 1 ? "," : "");
-            });
-            query += ") values(";
-            keys.forEach((k, i) => {
-              query +=
-                "?" +
-                (i < keys.length - 1 ? "," : "");
-            });
-            query += ")";
-          }
-          keys.forEach((k: string, i) => {
-            let value = (item as any)[k];
-            let column = table?.props.find(
-              x => x.columnName.toString() === k
-            );
+    try {
 
-            if (column?.columnType === "JSON")
-              value = JSON.stringify(value);
-            let v = value ?? null;
-            v = Functions.translateAndEncrypt(
-              v,
-              this as any,
-              item.tableName,
-              k
-            );
-            args.push(v);
-          });
-          if (uiqueItem) item.id = uiqueItem.id;
-          if (uiqueItem != undefined)
-            args.push(uiqueItem.id);
-          await this.execute(query, args);
-          if (
-            saveAndForget !== true ||
-            item.id === 0 ||
-            item.id === undefined
-          ) {
-            const lastItem =
-              (await this.selectLastRecord<
-                IId<D>
-              >(item)) ?? item;
-            item.id = lastItem.id;
-          }
-          await this.triggerWatch(
-            [item],
-            "onSave",
-            sOperations,
-            item.tableName || tableName
-          );
-          resolve(item as any as T);
-        } catch (error) {
-          console.error(error, item);
-          reject(error);
+      this.log("Executing Save...");
+      const uiqueItem = await this.getUique(item);
+      let table = this.tables.find(x => x.tableName == item.tableName);
+      const keys = Functions.getAvailableKeys(await this.allowedKeys(item.tableName, true), item);
+      const sOperations = uiqueItem ? "UPDATE" : "INSERT";
+      let query = "";
+      let args = [] as any[];
+      if (uiqueItem) {
+        if (insertOnly) {
+          return item;
         }
+        query = `UPDATE ${item.tableName} SET `;
+        keys.forEach((k, i) => {
+          query += ` ${k}=? ` + (i < keys.length - 1 ? "," : "");
+        });
+        query += " WHERE id=?";
+      } else {
+        query = `INSERT INTO ${item.tableName} (`;
+        keys.forEach((k, i) => {
+          query += k + (i < keys.length - 1 ? "," : "");
+        });
+        query += ") values(";
+        keys.forEach((k, i) => {
+          query += "?" + (i < keys.length - 1 ? "," : "");
+        });
+        query += ")";
       }
-    ) as Promise<T | undefined>;
+
+      keys.forEach((k: string, i) => {
+        let value = (item as any)[k];
+        let column = table?.props.find(x => x.columnName.toString() === k);
+
+        if (column?.columnType === "JSON")
+          value = JSON.stringify(value);
+        let v = value ?? null;
+        v = Functions.translateAndEncrypt(v, this as any, item.tableName, k);
+        args.push(v);
+      });
+
+      if (uiqueItem) item.id = uiqueItem.id;
+      if (uiqueItem != undefined)
+        args.push(uiqueItem.id);
+
+      let result = await this.execute(query, args);
+      if (saveAndForget !== true || item.id === 0 || item.id === undefined) {
+        if (result == undefined || typeof result != "number" || result <= 0) {
+          const lastItem = (await this.selectLastRecord<IId<D>>(item)) ?? item;
+          item.id = lastItem.id;
+        } else item.id = result;
+
+      }
+      await this.triggerWatch([item], "onSave", sOperations, item.tableName || tableName);
+      return item as T;
+    } catch (error) {
+      this.error(error, item);
+      throw error;
+    }
   }
 
   private async localDelete(items: IId<D>[], tableName: string) {
@@ -539,15 +499,10 @@ class Database<D extends string>
     );
   }
 
-  private async selectLastRecord<T>(
-    item: IId<D>
-  ) {
+  private async selectLastRecord<T>(item: IId<D>) {
     this.info("Executing SelectLastRecord... ");
     if (!item.tableName) {
-      this.error(
-        "TableName cannot be empty for:",
-        item
-      );
+      this.error("TableName cannot be empty for:", item);
       throw "TableName cannot be empty";
     }
     return Functions.single<T>(
@@ -626,19 +581,10 @@ class Database<D extends string>
     if (this.timer) clearInterval(this.timer);
     this.refresherSettings = { ms };
     this.timer = setInterval(async () => {
-      let h =
-        Math.abs((this.timeStamp as any) - (new Date() as any)) /
-        36e5;
-      if (
-        h < 2 ||
-        this.isClosing ||
-        this.isClosed
-      )
+      let h = Math.abs((this.timeStamp as any) - (new Date() as any)) / 36e5;
+      if (h < 2 || this.isClosing || this.isClosed)
         return;
-      this.info(
-        "db refresh:",
-        await this.tryToClose()
-      );
+      this.info("db refresh:", await this.tryToClose());
     }, ms);
   }
 
@@ -668,7 +614,7 @@ class Database<D extends string>
       r = true;
       return true;
     } catch (e) {
-      console.error(e);
+      this.error(e);
       return false;
     } finally {
       if (r) {
@@ -682,20 +628,12 @@ class Database<D extends string>
 
   private async getAllAsync(q: string, ...args: any[]) {
     let db = await this.dataBase();
-    let result = await db.executeSql(q, args, "READ");
+    let result = (await db.executeSql(q, args, "READ")) as any[];
     return (result ?? []).map(x => x);
   }
 
-  public allowedKeys = async (
-    tableName: D,
-    fromCachedKyes?: boolean,
-    allKeys?: boolean
-  ) => {
-    if (
-      fromCachedKyes === true &&
-      !allKeys &&
-      this.mappedKeys.has(tableName)
-    )
+  public async allowedKeys(tableName: D, fromCachedKyes?: boolean, allKeys?: boolean) {
+    if (fromCachedKyes === true && !allKeys && this.mappedKeys.has(tableName))
       return this.mappedKeys.get(tableName) as string[];
 
     try {
@@ -706,15 +644,7 @@ class Database<D extends string>
       var keys = [] as string[];
 
       for (let row of result) {
-        if ((table === undefined && row.name != "id") ||
-          (table &&
-            (table.props.find(
-              x =>
-                x.columnName == row.name &&
-                !x.isAutoIncrement
-            ) ||
-              allKeys))
-        )
+        if ((table === undefined && row.name != "id") || (table && (table.props.find(x => x.columnName == row.name && !x.isAutoIncrement) || allKeys)))
           keys.push(row.name);
       }
 
@@ -722,15 +652,13 @@ class Database<D extends string>
         this.mappedKeys.set(tableName, keys);
       return keys;
     } catch (e) {
-      console.error(e);
+      this.error(e);
       throw e;
     }
   };
 
   public watch<T extends IId<D>>(tableName: D) {
-    var watcher = new Watcher<T, D>(
-      tableName
-    ) as IWatcher<T, D>;
+    var watcher = new Watcher<T, D>(tableName) as IWatcher<T, D>;
     watchers.push(watcher);
     return watcher;
   }
@@ -751,24 +679,20 @@ class Database<D extends string>
     tableName?: D,
     saveAndForget?: boolean
   ) {
-    const tItems = Array.isArray(items)
-      ? items
-      : [items];
     try {
-      var returnItem = [] as T[];
-      for (var item of tItems) {
-        returnItem.push(
-          (await this.localSave<T>(
-            item as any,
-            insertOnly,
-            tableName,
-            saveAndForget
-          )) ?? (item as any)
+      var returnItem: T[] = [];
+      for (var item of Functions.toArray<IId<D>>(items)) {
+        returnItem.push((await this.localSave(
+          item,
+          insertOnly,
+          tableName,
+          saveAndForget
+        )) ?? (item as any)
         );
       }
-      return returnItem as T[];
+      return returnItem;
     } catch (e) {
-      console.error(e);
+      this.error(e);
       throw e;
     }
   }
@@ -778,39 +702,25 @@ class Database<D extends string>
     tableName?: D
   ) {
     try {
-      var tItems = (
-        Array.isArray(items) ? items : [items]
-      ).reduce((v, c) => {
-        const x = Functions.validateTableName(
-          c,
-          tableName
-        );
+      var tItems = Functions.toArray<IId<D>>(items).reduce((v, c) => {
+        const x = Functions.validateTableName(c, tableName);
         if (v[x.tableName])
           v[x.tableName].push(c);
         else v[x.tableName] = [c];
-
         return v;
       }, {} as any);
 
       for (let key of Object.keys(tItems)) {
         await this.localDelete(tItems[key], key);
-        await this.triggerWatch(
-          tItems[key],
-          "onDelete",
-          undefined,
-          tableName
-        );
+        await this.triggerWatch(tItems[key], "onDelete", undefined, tableName);
       }
     } catch (e) {
-      console.error(e);
+      this.error(e);
       throw e;
     }
   }
 
-  async where<T extends IId<D>>(
-    tableName: D,
-    query?: any | T
-  ) {
+  async where<T extends IId<D>>(tableName: D, query?: any | T) {
     const q = Functions.translateSimpleSql(this as any as IDataBaseExtender<string>, tableName, query);
     return (await this.find(
       q.sql,
@@ -856,34 +766,23 @@ class Database<D extends string>
             );
         });
         booleanColumns?.forEach(column => {
-          var columnName =
-            column.columnName as string;
-          if (
-            item[columnName] != undefined &&
-            item[columnName] != null
-          ) {
-            if (
-              item[columnName] === 0 ||
-              item[columnName] === "0" ||
-              item[columnName] === false
-            )
+          var columnName = column.columnName as string;
+          if (item[columnName] != undefined && item[columnName] != null) {
+            if (item[columnName] === 0 || item[columnName] === "0" || item[columnName] === false)
               item[columnName] = false;
             else item[columnName] = true;
           }
         });
 
         dateColumns?.forEach(column => {
-          var columnName =
-            column.columnName as string;
+          var columnName = column.columnName as string;
           if (
             item[columnName] != undefined &&
             item[columnName] != null &&
             item[columnName].length > 0
           ) {
             try {
-              item[columnName] = new Date(
-                item[columnName]
-              );
+              item[columnName] = new Date(item[columnName]);
             } catch {
               /// ignore
             }
@@ -912,53 +811,40 @@ class Database<D extends string>
 
       return items;
     } catch (e) {
-      console.error(e);
+      this.error(e);
       throw e;
     }
   }
 
-  executeRawSql = async (queries: Query[]) => {
+  async executeRawSql(queries: Query[]) {
+    let result: any = undefined;
     try {
       this.timeStamp = new Date();
       let db = await this.dataBase();
       for (let sql of queries) {
-        if (sql.args.length > 0)
-          await db.executeSql(sql.sql, sql.args, "WRITE");
-        else await db.executeSql(sql.sql, [], "WRITE");
+        let operation: Operations = (sql.args ?? []).length <= 0 ? "Bulk" : "WRITE";
+        sql.sql = (sql.sql.indexOf("\n") != -1 ? "PRAGMA journal_mode = WAL;\n" : "") + sql.sql;
+        result = await db.executeSql(sql.sql, sql.args ?? [], operation);
       }
     } catch (e) {
-      console.error(e);
+      this.error(e);
       throw e;
     }
+    return result;
   };
 
-  execute = async (
-    query: string,
-    args?: any[]
-  ) => {
-    return new Promise(
-      async (resolve, reject) => {
-        try {
-          this.info("Executing Query:" + query);
-          await this.executeRawSql([
-            { sql: query, args: args || [] }
-          ]);
-          this.info("Quary executed");
-          resolve(true);
-        } catch (e) {
-          console.error(
-            "Could not execute query:",
-            query,
-            args,
-            e
-          );
-          reject(e);
-        } finally {
-          clearTimeout(this.timeout);
-        }
-      }
-    ) as Promise<boolean>;
-  };
+  async execute(query: string, args?: any[]) {
+    try {
+      this.info("Executing Query:\n" + query);
+      let result = await this.executeRawSql([{ sql: query, args: args }]);
+      this.info("Quary executed");
+      return result;
+    } catch (e) {
+      this.error("Could not execute query:", query, args, e);
+      throw e;
+    }
+  }
+
 
   async bulkSave<T>(tableName: D) {
     const item = new BulkSave<T, D>(
@@ -997,80 +883,75 @@ class Database<D extends string>
 
   public dropTables = async () => {
     try {
-      for (var x of this.tables) {
-        await this.execute(
-          `DROP TABLE if exists ${x.tableName}`
-        );
-      }
+      await this.execute([...this.tables].reverse().map(x => `DROP TABLE if exists ${x.tableName};`).join("\n"));
       await this.setUpDataBase(true);
     } catch (e) {
-      console.error(e);
+      this.error(e);
     }
   };
 
-  async migrateNewChanges() {
-
-    let sqls: any[] = [];
-    for (var table of this.tables) {
-      this.log(
-        `migrating-check ${table.tableName}`
-      );
-      let keys = await this.allowedKeys(
-        table.tableName,
-        false,
-        true
-      );
-      let rColumns = keys.filter(
-        x =>
-          !table.props.find(
-            k => x == k.columnName.toString()
-          )
-      );
-
-      let aColumns = table.props.filter(
-        x =>
-          !keys.find(
-            k => k == x.columnName.toString()
-          )
-      );
-
-      rColumns.forEach(x => {
-        sqls.push(
-          `ALTER TABLE ${table.tableName} DROP COLUMN ${x}`
-        );
-      });
-
-      aColumns.forEach(x => {
-        sqls.push(`ALTER TABLE ${table.tableName} ADD COLUMN ${x.columnName.toString()} ${Functions.dbType(x.columnType)}${Functions.dbDefaultValue(x.columnType, x.defaultValue)}`);
-      });
-    }
-    this.log(`migrating`);
+  public async migrateNewChanges(): Promise<void> {
+    let sqls: string[] = [];
     try {
-      if (sqls.length > 0) {
-        await this.beginTransaction();
-        await this.execute("PRAGMA foreign_keys=OFF");
-      }
-      for (let sql of sqls) {
-        await this.execute(sql);
-      }
-      if (sqls.length > 0) {
-        await this.execute(
-          "PRAGMA foreign_keys=ON"
+      for (const table of this.tables) {
+        this.info(`Checking migration for table: ${table.tableName}`);
+
+        const existingColumns: string[] = await this.allowedKeys(table.tableName, false, true);
+
+        const columnsToRemove = existingColumns.filter(col =>
+          !table.props.some(prop => prop.columnName.toString() === col)
         );
-        await this.commitTransaction();
-      } else
-        this.log(
-          "The database is upp to date, no migration needed"
+
+        const columnsToAdd = table.props.filter(prop =>
+          !existingColumns.includes(prop.columnName.toString())
         );
-    } catch (e) {
-      await this.execute(
-        "PRAGMA foreign_keys=ON"
-      );
-      await this.rollbackTransaction();
-      console.error("migrating failed", e);
-      throw e;
+
+        if (columnsToRemove.length > 0) {
+          sqls.push(...columnsToRemove.map(col => `ALTER TABLE ${table.tableName} DROP COLUMN ${col};`));
+        }
+
+        if (columnsToAdd.length > 0) {
+          sqls.push(...columnsToAdd.map(col =>
+            `ALTER TABLE ${table.tableName} ADD COLUMN ${col.columnName.toString()} ` +
+            `${Functions.dbType(col.columnType)}${Functions.dbDefaultValue(col.columnType, col.defaultValue)};`
+          ));
+        }
+      }
+
+      if (sqls.length === 0) {
+        this.log("The database is up to date, no migration needed.");
+        return;
+      }
+
+      this.info(`Applying ${sqls.length} migration(s)...`);
+      await this.runMigrations(sqls);
+
+    } catch (error) {
+      this.error("Migration process failed:", error);
+      throw error;
     }
   }
+
+  /**
+   * Executes all migration queries in a single transaction
+   */
+  private async runMigrations(queries: string[]): Promise<void> {
+    await this.beginTransaction();
+    try {
+      await this.execute("PRAGMA foreign_keys=OFF");
+      await this.execute(queries.join("\n"))
+      await this.execute("PRAGMA foreign_keys=ON");
+      await this.commitTransaction();
+      this.info("Migration completed successfully.");
+
+    } catch (error) {
+      await this.execute("PRAGMA foreign_keys=ON");
+      await this.rollbackTransaction();
+      this.error("Rolling back migration due to error:", error);
+      throw error;
+    }
+  }
+
 
   setUpDataBase = async (
     forceCheck?: boolean
@@ -1080,30 +961,21 @@ class Database<D extends string>
         await this.beginTransaction();
         this.log(`dbIni= ${Database.dbIni}`);
         this.log(`forceCheck= ${forceCheck}`);
-        this.log(
-          "initilize database table setup"
-        );
-
-
-
+        this.log("initilize database table setup");
+        const quries: string[] = [];
         for (var table of this.tables) {
-          var query = `CREATE TABLE if not exists ${table.tableName} (`;
+          var query = `CREATE TABLE if not exists ${table.tableName} (\n`;
           table.props.forEach((col, index) => {
-            query += `${col.columnName.toString()} ${Functions.dbType(col.columnType)} ${!col.isNullable ? "NOT NULL" : ""} ${col.isPrimary ? "UNIQUE" : ""}${Functions.dbDefaultValue(col.columnType, col.defaultValue)},\n`;
+            query += `${col.columnName.toString()} ${Functions.dbType(col.columnType)}${!col.isNullable ? " NOT NULL" : ""}${col.isPrimary ? " UNIQUE" : ""}${Functions.dbDefaultValue(col.columnType, col.defaultValue)},\n`;
           });
           table.props
             .filter(x => x.isPrimary === true)
             .forEach((col, index) => {
-              query +=
-                `PRIMARY KEY(${col.columnName.toString()} ${col.isAutoIncrement === true
-                  ? "AUTOINCREMENT"
-                  : ""
+              query += `PRIMARY KEY(${col.columnName.toString()} ${col.isAutoIncrement === true
+                ? "AUTOINCREMENT"
+                : ""
                 })` +
-                (index <
-                  table.props.filter(
-                    x => x.isPrimary === true
-                  ).length -
-                  1
+                (index < table.props.filter(x => x.isPrimary === true).length - 1
                   ? ",\n"
                   : "\n");
             });
@@ -1115,25 +987,22 @@ class Database<D extends string>
             query += ",";
             table.constrains.forEach(
               (col, index) => {
-                query +=
-                  `CONSTRAINT "fk_${col.columnName.toString()}" FOREIGN KEY(${col.columnName.toString()}) REFERENCES ${col.contraintTableName
-                  }(${col.contraintColumnName})` +
-                  (index <
-                    (table.constrains?.length ??
-                      0) -
-                    1
-                    ? ",\n"
-                    : "\n");
+                query += `CONSTRAINT "fk_${col.columnName.toString()}" FOREIGN KEY(${col.columnName.toString()}) REFERENCES ${col.contraintTableName}(${col.contraintColumnName})` + (index < (table.constrains?.length ?? 0) - 1
+                  ? ",\n"
+                  : "\n");
               }
             );
           }
           query += ");";
-          await this.execute(query);
+          quries.push(query);
+
         }
+        await this.execute(quries.join("\n\n"));
         await this.commitTransaction();
+        this.mappedKeys.clear();
       }
     } catch (e) {
-      console.error(e);
+      this.error(e);
       await this.rollbackTransaction();
       throw e;
     }

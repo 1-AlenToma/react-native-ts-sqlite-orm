@@ -6,7 +6,7 @@ import {
 
 export type Query = { sql: string, args: any[] };
 
-export type Operations = "READ" | "WRITE";
+export type Operations = "READ" | "WRITE" | "Bulk";
 
 export type DatabaseDrive = {
   /**
@@ -16,7 +16,7 @@ export type DatabaseDrive = {
    * @param args 
    * @returns 
    */
-  executeSql: (sql: string, args: any[], operation: Operations) => Promise<any[]>;
+  executeSql: (sql: string, args: any[], operation: Operations) => Promise<any[] | number | undefined>;
   close(): Promise<void>;
 }
 
@@ -107,7 +107,7 @@ export type ITableBuilder<T, D extends string> = {
    */
   hasMany<C extends IId<D>>(prop: ObjectPropertyNamesNames<T>, tableName: D, foreignkey: NonFunctionPropertyNames<C>, idProp?: NonFunctionPropertyNames<T>): ITableBuilder<T, D>;
 
-  
+
   /**
    * add the prop so you could load it in querySelector or item load method
    * @param prop 
@@ -220,7 +220,7 @@ class Test {
 
 export abstract class IId<D extends string> {
   public id: number;
-  public tableName: D;
+  public readonly tableName: D;
   constructor(tableName: D, id?: number) {
     this.id = id ?? 0;
     this.tableName = tableName;
@@ -474,10 +474,7 @@ export interface IDatabase<D extends string> {
   /**
    * execute sql without returning anyting
    */
-  execute: (
-    query: string,
-    args?: any[]
-  ) => Promise<boolean>;
+  execute: (query: string, args?: any[]) => Promise<any>;
   /**
    * Drop all tables
    */
@@ -491,15 +488,11 @@ export interface IDatabase<D extends string> {
   /**
    * find out if there some changes between object and db table
    */
-  tableHasChanges: <T extends IId<D>>(
-    item: ITableBuilder<T, D>
-  ) => Promise<boolean>;
+  tableHasChanges: <T extends IId<D>>(item: ITableBuilder<T, D>) => Promise<boolean>;
   /**
    * execute an array of sql
    */
-  executeRawSql: (
-    queries: Query[]
-  ) => Promise<void>;
+  executeRawSql: (queries: Query[]) => Promise<any>;
 
   /**
    * migrate new added or removed columns

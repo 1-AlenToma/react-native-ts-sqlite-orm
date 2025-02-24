@@ -18,14 +18,18 @@ export default class DbContext extends Database<TableNames> {
             let driver: DatabaseDrive = {
                 close: async () => await db.closeAsync(),
                 executeSql: async (sql, args, operation) => {
-                    let result: any[] = [];
                     console.info("Sql Operation", operation);
-                    if (operation == "WRITE") { // Write, no return result is needed in this case
-                        await db.runAsync(sql, args);
-                    } else { // select or any other query and return its result
-                        result = await db.getAllAsync(sql, args);
+                    switch (operation) {
+                        case "Bulk":
+                            await db.execAsync(sql);
+                            break;
+                        case "READ":
+                            return await db.getAllAsync(sql, args);
+                        case "WRITE":
+                            let item = await db.runAsync(sql, args);
+                            return item?.lastInsertRowId;
                     }
-                    return result;
+                    return undefined;
                 },
             }
             return driver;
