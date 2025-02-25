@@ -32,8 +32,8 @@ export class DbSet<T extends IId<D>, D extends string> implements IDbSet<T, D> {
         return this.db.watch<T>(this.tableName);
     }
 
-    useQuery(query: any) {
-        return this.db.useQuery<T>(this.tableName, query);
+    useQuery(query: any, updateIf?: (items: T[], operation: string) => boolean) {
+        return this.db.useQuery<T>(this.tableName, query, undefined, updateIf);
     }
 
     get query() {

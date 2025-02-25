@@ -11,7 +11,7 @@ export default abstract class Table<D extends string> extends IId<D> implements 
     update: (...keys: NonFunctionPropertyNames<this>[]) => Promise<void>;
     load: (...props: ObjectPropertyNamesNames<this>[]) => Promise<void>;
 
-    abstract config(): ITableBuilder<any,D>;
+    abstract config(): ITableBuilder<any, D>;
 
     TableBuilder<T extends object, D extends string>(tableName: D) {
         return TableBuilder<T, D>(tableName) as ITableBuilder<T, D>;

@@ -64,8 +64,8 @@ export abstract class ORMDataBase<D extends string> implements IDatabase<D> {
     }
   }
 
-  useQuery<T extends IId<D>>(tableName: D, query: Query | IReturnMethods<T, D> | (() => Promise<T[]>), onDbItemsChanged?: (items: T[]) => T[]) {
-    return this.db.useQuery(tableName, query as any, onDbItemsChanged)
+  useQuery<T extends IId<D>>(tableName: D, query: Query | IReturnMethods<T, D> | (() => Promise<T[]>), onDbItemsChanged?: (items: T[]) => T[], updateIf?: (items: T[], operation: string) => boolean) {
+    return this.db.useQuery(tableName, query as any, onDbItemsChanged, updateIf)
   }
   get isClosed() {
     return this.db.isClosed;
@@ -216,7 +216,7 @@ class Database<D extends string>
       tableName,
       onDbItemChanged,
       updateIf
-    ) as any;
+    );
   }
 
   //#endregion Hooks

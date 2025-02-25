@@ -180,7 +180,7 @@ export type ITableBuilder<T, D extends string> = {
   /**
    * add column to table and specify its props there after, eg boolean, number etc
    */
-  column: (colName: NonFunctionPropertyNames<T>) => ITableBuilder<T, D>;
+  column: (colName: NonFunctionPropertyNames<T> | ObjectPropertyNamesNames<T>) => ITableBuilder<T, D>;
   /**
    * add a foreign key to the table
    */
@@ -342,7 +342,7 @@ export interface IDbSet<T extends IId<D>, D extends string> {
   getAll: () => Promise<IQueryResultItem<T, D>[]>;
   bulkSave: () => Promise<BulkSave<T, D>>;
   watch: () => IWatcher<T, D>;
-  useQuery: (query: | Query | IReturnMethods<T, D> | (() => Promise<T[]>)) =>
+  useQuery: (query: | Query | IReturnMethods<T, D> | (() => Promise<T[]>), updateIf?: (items: T[], operation: string) => boolean) =>
     readonly [IQueryResultItem<T, D>[], boolean, () => Promise<void>, IDatabase<D>]
 }
 
@@ -352,12 +352,7 @@ export interface IDatabase<D extends string> {
   /**
    * This is a hook you could use in a component
    */
-  useQuery: <T extends IId<D>>(
-    tableName: D,
-    query: | Query | IReturnMethods<T, D>
-      | (() => Promise<T[]>),
-    onDbItemsChanged?: (items: T[]) => T[]
-  ) => readonly [IQueryResultItem<T, D>[], boolean, () => Promise<void>, IDatabase<D>];
+  useQuery: <T extends IId<D>>(tableName: D, query: | Query | IReturnMethods<T, D> | (() => Promise<T[]>), onDbItemsChanged?: (items: T[]) => T[], updateIf?: (items: T[], operation: string) => boolean) => readonly [IQueryResultItem<T, D>[], boolean, () => Promise<void>, IDatabase<D>];
 
   /**
    * Freeze all watchers, this is usefull when for example doing many changes to the db
