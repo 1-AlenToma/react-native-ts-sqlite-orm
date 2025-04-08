@@ -1,7 +1,8 @@
 import Functions from "./Functions";
-import { IDataBaseExtender } from '../sql.wrapper.types'
-import QuerySelector from '../QuerySelector'
-import { Param } from "../QuerySelectorProps"
+import { IDataBaseExtender } from '../sql.wrapper.types';
+import QuerySelector from '../QuerySelector';
+import { Param } from "../QuerySelectorProps";
+
 export default class QValue {
     value?: any;
     value2?: any;
@@ -95,6 +96,7 @@ export default class QValue {
         this.value2 = value;
         return this;
     }
+
     Args(args: Param) {
         this.args = args;
         return this;

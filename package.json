@@ -1,10 +1,11 @@
 {
   "name": "react-native-ts-sqlite-orm",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "This is a fully typescript sqlite-ORM-builder",
   "source": "./src/index.ts",
   "main": "./lib/commonjs/index.js",
   "module": "./lib/module/index.js",
+  "types": "./lib/typescript/module/src/index.d.ts",
   "exports": {
     ".": {
       "import": {
@@ -44,7 +45,7 @@
     "clean": "del-cli lib",
     "prepare": "bob build",
     "release": "release-it",
-    "build": "tsc & npm run prepare",
+    "build": "npm run clean & tsc & npm run prepare",
     "dev": "npm run build & npm run test"
   },
   "keywords": [

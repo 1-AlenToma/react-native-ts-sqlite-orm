@@ -3,7 +3,6 @@ import * as React from "react";
 import repository from './Modols/respository';
 import { Chapters, DetaliItems } from './Modols/dbModols';
 import { IWatcher } from 'react-native-ts-sqlite-orm';
-let result = 0;
 const dbContext = new repository();
 
 const addTestData = async () => {
@@ -51,7 +50,6 @@ export default function App() {
 
   React.useEffect(() => {
     (async () => {
-      return;
       if (data && data.length > 0) {
         for (let item of data) {
           await item.load("children");
