@@ -10,8 +10,8 @@ import * as SQLite from 'expo-sqlite';
 export type TableNames = "Parents" | "Childrens";
 
 export default class DbContext extends Database<TableNames> {
-    readonly Parents = this.DbSet<Parent,TableNames>(Parent);
-    readonly Childrens = this.DbSet<Child,TableNames>(Child);
+    readonly Parents = this.DbSet<Parent>(Parent);
+    readonly Childrens = this.DbSet<Child>(Child);
     constructor() {
         super(async () => {
             let db = await SQLite.openDatabaseAsync("test.db");
