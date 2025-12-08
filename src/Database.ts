@@ -176,12 +176,12 @@ class Database<D extends string>
         this.tables.push(table as any)
 
       }
+    }
 
-      let items = Functions.reorderTables(this.tables as any);
-      if (items.length == this.tables.length) {
-        this.tables = items;
-        this.info("Sorting table tree, to ", items.map(x => x.tableName))
-      }
+    let items = Functions.reorderTables(this.tables as any);
+    if (items.length == this.tables.length) {
+      this.tables = items;
+      this.info("Sorting table tree, to ", items.map(x => x.tableName))
     }
   }
 

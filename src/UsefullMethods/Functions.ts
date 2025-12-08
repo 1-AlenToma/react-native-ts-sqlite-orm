@@ -2,22 +2,25 @@ import 'react-native-get-random-values';
 import Errors from "./Errors";
 import { ColumnType, IDataBaseExtender, IId, ITableBuilder, Query } from '../sql.wrapper.types'
 import crypto from 'crypto-js';
+declare var __DEV__: boolean;
 class Functions {
 
     reorderTables(jsonData: ITableBuilder<any, string>[]) {
+        const sortedTables: any[] = [];
         const tableMap = Object.fromEntries(jsonData.map(table => [table.tableName, table]));
-        const dependencyGraph = Object.fromEntries(jsonData.map(table => [table.tableName, new Set()]))
+        const dependencyGraph = Object.fromEntries(jsonData.map(table => [table.tableName, new Set<string>()]));
 
-        // Build dependency graph
+        // Build dependency graph (skip self-referencing)
         jsonData.forEach(table => {
             (table.constrains || []).forEach(constraint => {
                 const parentTable = constraint.contraintTableName;
-                dependencyGraph[table.tableName].add(parentTable);
+                if (parentTable !== table.tableName) { // skip self-reference
+                    dependencyGraph[table.tableName].add(parentTable);
+                }
             });
         });
 
-        // Topological sorting using Kahn's Algorithm
-        const sortedTables = [];
+        // Topological sort (Kahn's algorithm)
         const noDependencyTables = jsonData.filter(table => dependencyGraph[table.tableName].size === 0);
 
         while (noDependencyTables.length) {
@@ -25,13 +28,21 @@ class Functions {
             sortedTables.push(table);
 
             jsonData.forEach(otherTable => {
-                if (dependencyGraph[otherTable.tableName].has(table.tableName)) {
+                if (table && dependencyGraph[otherTable.tableName].has(table.tableName)) {
                     dependencyGraph[otherTable.tableName].delete(table.tableName);
                     if (dependencyGraph[otherTable.tableName].size === 0) {
                         noDependencyTables.push(tableMap[otherTable.tableName]);
                     }
                 }
             });
+        }
+
+        // Optional: Check for unresolved circular dependencies
+        const unresolved = jsonData.filter(t => !sortedTables.includes(t));
+        if (unresolved.length) {
+            if (__DEV__)
+                console.warn("Circular or unresolved dependencies:", unresolved.map(t => t.tableName));
+            sortedTables.push(...unresolved); // Add them at the end to avoid breaking
         }
 
         return sortedTables;

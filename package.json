@@ -1,6 +1,6 @@
 {
   "name": "react-native-ts-sqlite-orm",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "This is a fully typescript sqlite-ORM-builder",
   "source": "./src/index.ts",
   "main": "./lib/commonjs/index.js",
