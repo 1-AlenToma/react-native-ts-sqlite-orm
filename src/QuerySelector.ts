@@ -16,6 +16,8 @@ import {
 } from "./UsefullMethods";
 import { Param } from "./QuerySelectorProps"
 
+export type ItemOrFunction<T, D extends string> = T & IId<D> | (() => Promise<T & IId<D>>)
+
 export type IColumnSelector<T> = (x: T) => any;
 export type ArrayIColumnSelector<T> = (
   x: T
@@ -92,7 +94,7 @@ export type IInclude<T, B, D extends string> = {
 export interface IReturnMethods<T, D extends string> extends GlobalIQuerySelector<T, D> {
   firstOrDefault: () => Promise<IQueryResultItem<T, D> | undefined>;
   toList: () => Promise<IQueryResultItem<T, D>[]>;
-  findOrSave: (item: T & IId<D>) => Promise<IQueryResultItem<T, D>>;
+  findOrSave: (item: ItemOrFunction<T, D>) => Promise<IQueryResultItem<T, D>>;
   /**
   * delete based on Query above.
   */
@@ -574,7 +576,7 @@ class ReturnMethods<T,
   }
 
   async findOrSave(
-    item: ParentType & IId<D>
+    item: ItemOrFunction<ParentType, D>
   ) {
     return await this.parent.findOrSave(item);
   }
@@ -1597,13 +1599,14 @@ export default class QuerySelector<
     await (this.database as any).triggerWatch([], "onDelete", undefined, this.tableName);
   }
 
-  async findOrSave(item: T & IId<D>) {
+  async findOrSave(item: ItemOrFunction<T, D>) {
     const sql = this.getSql("SELECT");
-    item.tableName = this.tableName;
+    let xItem = typeof item == "object" ? item : await item(); 
+    xItem.tableName = this.tableName;
     var dbItem = Functions.single<IId<D>>(await this.database.find(sql.sql, sql.args, this.tableName));
-    
+
     if (!dbItem) {
-      dbItem = Functions.single<any>(await this.database.save<T>(item, false, this.tableName));
+      dbItem = Functions.single<any>(await this.database.save<T>(xItem, false, this.tableName));
     }
 
     dbItem.tableName = this.tableName;
