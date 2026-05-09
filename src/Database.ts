@@ -71,9 +71,9 @@ export abstract class ORMDataBase<D extends string> implements IDatabase<D> {
     return this.db.isClosed;
   }
 
-  disableWatchers() { return this.db.disableWatchers() };
+  disableWatchers() { return this.db.disableWatchers() as any };
   enableWatchers() { return this.db.enableWatchers(); }
-  disableHooks() { return this.db.disableHooks(); }
+  disableHooks() { return this.db.disableHooks() as any; }
   enableHooks() { return this.db.enableHooks(); }
   bulkSave<T extends IId<D>>(tabelName: D) { return this.db.bulkSave(tabelName); }
   tryToClose() { return this.db.tryToClose(); }
@@ -129,7 +129,7 @@ class Database<D extends string>
   public tables: TableBuilder<any, D>[] = [];
   private static dbIni: boolean = false;
   private onInit?: (database: IDatabase<D>) => Promise<void>;
-  private db?: DatabaseDrive;
+  public db?: DatabaseDrive;
   public isClosed?: boolean;
   private isClosing: boolean;
   private isOpen: boolean = false;
@@ -203,6 +203,7 @@ class Database<D extends string>
     tableName: D,
     query:
       | Query
+      | IReturnMethods<T, D>
       | (() => Promise<T[]>),
     onDbItemChanged?: (items: T[]) => T[],
     updateIf?: (
@@ -648,7 +649,7 @@ class Database<D extends string>
 
   private async getAllAsync(q: string, ...args: any[]) {
     let db = await this.dataBase();
-    let result = (await db.executeSql(q, args, "READ")) as any[];
+    let result = (await db.executeSql?.(q, args, "READ") ?? await db.executeSqlBatchMode?.("READ", { sql: q, args })) as any[];
     return (result ?? []).map(x => x);
   }
 
@@ -689,7 +690,7 @@ class Database<D extends string>
     return await createQueryResultType<T, D>(item as any, db as IDataBaseExtender<D>);
   }
 
-  public querySelector<T extends IId<D>>(tableName: D) {
+  public querySelector<T extends IId<D>>(tableName: D): IQuerySelector<T, D> {
     return new QuerySelector<T, D>(tableName, this) as IQuerySelector<T, D>;
   }
 
@@ -841,11 +842,13 @@ class Database<D extends string>
     try {
       this.timeStamp = new Date();
       let db = await this.dataBase();
-      for (let sql of queries) {
-        let operation: Operations = (sql.args ?? []).length <= 0 ? "Bulk" : "WRITE";
-        sql.sql = (sql.sql.indexOf("\n") != -1 ? "PRAGMA journal_mode = WAL;\n" : "") + sql.sql;
-        result = await db.executeSql(sql.sql, sql.args ?? [], operation);
-      }
+      if (db.executeSqlBatchMode == undefined) {
+        for (let sql of queries) {
+          let operation: Operations = (sql.args ?? []).length <= 0 ? "Bulk" : "WRITE";
+          sql.sql = (sql.sql.indexOf("\n") != -1 ? "PRAGMA journal_mode = WAL;\n" : "") + sql.sql;
+          result = await db.executeSql?.(sql.sql, sql.args ?? [], operation);
+        }
+      } else result = await db.executeSqlBatchMode?.(queries.length > 1 ? "Bulk" : "WRITE", ...queries);
     } catch (e) {
       this.error(e);
       throw e;
@@ -856,7 +859,7 @@ class Database<D extends string>
   async execute(query: string, args?: any[]) {
     try {
       this.info("Executing Query:\n" + query);
-      let result = await this.executeRawSql([{ sql: query, args: args }]);
+      let result = await this.executeRawSql([{ sql: query, args: args ?? [] }]);
       this.info("Quary executed");
       return result;
     } catch (e) {
@@ -959,7 +962,7 @@ class Database<D extends string>
     await this.beginTransaction();
     try {
       await this.execute("PRAGMA foreign_keys=OFF");
-      await this.execute(queries.join("\n"))
+      await this.executeRawSql(queries.map(x => ({ sql: x, args: [] })))
       await this.execute("PRAGMA foreign_keys=ON");
       await this.commitTransaction();
       this.info("Migration completed successfully.");
@@ -1017,7 +1020,7 @@ class Database<D extends string>
           quries.push(query);
 
         }
-        await this.execute(quries.join("\n\n"));
+        await this.executeRawSql(quries.map(x => ({ sql: x, args: [] })));
         await this.commitTransaction();
         this.mappedKeys.clear();
       }

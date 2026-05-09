@@ -16,7 +16,8 @@ export type DatabaseDrive = {
    * @param args 
    * @returns 
    */
-  executeSql: (sql: string, args: any[], operation: Operations) => Promise<any[] | number | undefined>;
+  executeSql?: (sql: string, args: any[], operation: Operations) => Promise<any[] | number | undefined>;
+  executeSqlBatchMode?: (operation: Operations, ...queries: Query[]) => Promise<any[] | number | undefined>;
   close(): Promise<void>;
 }
 
@@ -252,6 +253,7 @@ export declare type StringValue =
 
 export type IDataBaseExtender<D extends string> =
   {
+    db?: DatabaseDrive;
     tables: ITableBuilder<any, D>[];
     dbTable: ITableBuilder<any, D>[];
     triggerWatch: <T extends IId<D>>(

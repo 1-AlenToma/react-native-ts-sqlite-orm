@@ -1594,22 +1594,22 @@ export default class QuerySelector<
   async delete() {
     var item = this.getSql("DELETE");
     let where = item.sql.replace(/(delete from)(\s)[a-zA-Z]+(\s)/gim, "").trim();
-    await Functions.executeContraineDelete(this.tableName, this.database, where, item.args);
+    await Functions.executeContraineDelete(this.tableName, this.database as any, where, item.args);
     await this.database.execute(item.sql, item.args);
     await (this.database as any).triggerWatch([], "onDelete", undefined, this.tableName);
   }
 
   async findOrSave(item: ItemOrFunction<T, D>) {
     const sql = this.getSql("SELECT");
-    let xItem = typeof item == "object" ? item : await item(); 
+    let xItem = typeof item == "object" ? item : await item();
     xItem.tableName = this.tableName;
     var dbItem = Functions.single<IId<D>>(await this.database.find(sql.sql, sql.args, this.tableName));
 
     if (!dbItem) {
       dbItem = Functions.single<any>(await this.database.save<T>(xItem, false, this.tableName));
     }
-
-    dbItem.tableName = this.tableName;
+    if (dbItem)
+      dbItem.tableName = this.tableName;
     if (dbItem && this.converter)
       dbItem = this.converter(dbItem);
     return await createQueryResultType<T, D>(dbItem, this.database, this.children);
