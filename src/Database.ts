@@ -11,13 +11,14 @@ import {
   IDataBaseExtender,
   DatabaseDrive,
   IDbSet,
-  Operations
+  Operations,
+  DBConfig
 } from "./sql.wrapper.types";
 import { TableBuilder } from "./TableStructor";
 import BulkSave from "./BulkSave";
 import UseQuery from "./hooks/useQuery";
 import QuerySelector, { IQuerySelector, IReturnMethods } from "./QuerySelector";
-import { createQueryResultType, Functions } from "./UsefullMethods";
+import { createQueryResultType, Functions, StringBuilder } from "./UsefullMethods";
 import { DbSet } from "./DbSet";
 import Table from "./Table";
 export abstract class ORMDataBase<D extends string> implements IDatabase<D> {
@@ -25,8 +26,8 @@ export abstract class ORMDataBase<D extends string> implements IDatabase<D> {
   constructor(
     getDatabase: () => Promise<DatabaseDrive>,
     onInit?: (database: IDatabase<D>) => Promise<void>,
-    disableLog?: boolean) {
-    this.db = new Database<D>(getDatabase, onInit, disableLog);
+    config?: DBConfig) {
+    this.db = new Database<D>(getDatabase, onInit, config);
   }
 
   addTables(...tables: (typeof Table<D>[])) {
@@ -67,6 +68,7 @@ export abstract class ORMDataBase<D extends string> implements IDatabase<D> {
   useQuery<T extends IId<D>>(tableName: D, query: Query | IReturnMethods<T, D> | (() => Promise<T[]>), onDbItemsChanged?: (items: T[]) => T[], updateIf?: (items: T[], operation: string) => boolean) {
     return this.db.useQuery(tableName, query as any, onDbItemsChanged, updateIf)
   }
+
   get isClosed() {
     return this.db.isClosed;
   }
@@ -96,6 +98,7 @@ export abstract class ORMDataBase<D extends string> implements IDatabase<D> {
   tableHasChanges<T extends IId<D>>(item: ITableBuilder<T, D>) { return this.db.tableHasChanges<T>(item); }
   executeRawSql(queries: Query[]) { return this.db.executeRawSql(queries); }
   migrateNewChanges() { return this.db.migrateNewChanges(); }
+  queriesToSql(queries: Query[]) { return this.db.queriesToSql(queries); }
 
 }
 
@@ -141,12 +144,15 @@ class Database<D extends string>
   private _disableHooks?: boolean;
   private tempStore: TempStore<D>[];
   private timeStamp: Date | number = new Date();
+  private dbConfig?: DBConfig;
+  private configExecuted: boolean = false;
   constructor(
     getDatabase: () => Promise<DatabaseDrive>,
     onInit?: (database: IDatabase<D>) => Promise<void>,
-    disableLog?: boolean
+    config?: DBConfig
   ) {
-    this.disableLog = disableLog;
+    this.dbConfig = config;
+    this.disableLog = config?.disableLog;
     this.onInit = onInit;
     this.mappedKeys = new Map<D, string[]>();
     this.isClosing = false;
@@ -155,34 +161,43 @@ class Database<D extends string>
     this.tempStore = [];
     this.dataBase = async () => {
       while (this.isClosing) await this.wait();
-      if (
-        this.db === undefined ||
-        this.isClosed
-      ) {
+      if (this.db === undefined || this.isClosed) {
         this.db = await getDatabase();
         this.isClosed = false;
+        if (!this.configExecuted && this.dbConfig) {
+          let queries: Query[] = [];
+          this.configExecuted = true;
+          for (let key in this.dbConfig) {
+            if (["avoidTransaction", "disableLog"].includes(key))
+              continue;
+            let v = this.dbConfig[key];
+            if (typeof v == "string" && /\-/.test(v))
+              v = `"${v}"`;
+            queries.push({ sql: `PRAGMA ${key}=${v};`, args: [] });
+          }
+          if (queries.length > 0)
+            await this.executeRawSql(queries);
+        }
         await this.onInit?.(this as any);
       }
       this.isOpen = true;
       return this.db ?? (await getDatabase());
     };
-    //   this.tables = databaseTables as TableBuilder<any, D>[];
   }
 
   addTables(...tables: ITableBuilder<any, D>[]) {
     for (let table of tables) {
-      if (!this.tables.find(x => x.tableName == table.tableName)) {
+      if (!this.tables.some(x => x.tableName == table.tableName)) {
         this.info("adding", table.tableName)
-        this.tables.push(table as any)
-
+        this.tables.push(table as any);
       }
     }
 
-    let items = Functions.reorderTables(this.tables as any);
-    if (items.length == this.tables.length) {
-      this.tables = items;
-      this.info("Sorting table tree, to ", items.map(x => x.tableName))
-    }
+    let items = Functions.reorderTables<D>(this.tables) as TableBuilder<any, D>[];
+    if (items.length != this.tables.length)
+      items.push(...this.tables.filter(x => !items.some(s => s.tableName == x.tableName)));
+    this.tables = items;
+    this.info("Sorting table tree, to ", this.tables.map(x => x.tableName));
   }
 
   public log(...items: any[]) {
@@ -262,9 +277,7 @@ class Database<D extends string>
         this.tempStore.push(store);
       } else {
         items.forEach(x => {
-          if (
-            !store?.items.find(a => a.id === x.id)
-          )
+          if (!store?.items.find(a => a.id === x.id))
             store?.items.push(x);
         });
       }
@@ -343,10 +356,7 @@ class Database<D extends string>
             continue;
           }
 
-          if (
-            this._disableHooks &&
-            watcher.identifier === "Hook"
-          ) {
+          if (this._disableHooks && watcher.identifier === "Hook") {
             // this.info("Hook is Frozen", operation);
             this.AddToTempStore(
               tItems,
@@ -576,6 +586,8 @@ class Database<D extends string>
 
   public async beginTransaction() {
     this.resetRefresher();
+    if (this.dbConfig?.avoidTransaction)
+      return;
     if (this.transacting) return;
     this.info("creating transaction");
     await this.execute("begin transaction");
@@ -584,6 +596,8 @@ class Database<D extends string>
 
   public async commitTransaction() {
     this.resetRefresher();
+    if (this.dbConfig?.avoidTransaction)
+      return;
     if (!this.transacting) return;
     this.info("commiting transaction");
     await this.execute("commit");
@@ -592,6 +606,8 @@ class Database<D extends string>
 
   public async rollbackTransaction() {
     this.resetRefresher();
+    if (this.dbConfig?.avoidTransaction)
+      return;
     if (!this.transacting) return;
     this.info("rollback transaction");
     await this.execute("rollback");
@@ -835,6 +851,43 @@ class Database<D extends string>
       this.error(e);
       throw e;
     }
+  }
+
+  queriesToSql(quries: Query[]) {
+    let qs = [...quries.filter(x => x.parseble == false)];
+    let sql = [];
+    let c = "?";
+    const tempQuestionMark = "#questionMark";
+    for (let q of quries.filter(x => x.parseble)) {
+      let s = new StringBuilder(q.sql);
+      while (s.indexOf(c) !== -1 && q.args.length > 0) {
+        let value = q.args.shift();
+        if (Functions.isDefained(value) && typeof value === "string") {
+          if (value.indexOf(c) !== -1)
+            value = value.replace(
+              new RegExp("\\" + c, "gmi"),
+              tempQuestionMark
+            );
+          value = `'${value}'`;
+        }
+        if (!Functions.isDefained(value))
+          value = "NULL";
+        s.replaceIndexOf(c, value.toString());
+      }
+      sql.push(s);
+    }
+    if (sql.length > 0)
+      qs.push({
+        sql: sql
+          .join(";\n")
+          .replace(
+            new RegExp(tempQuestionMark, "gmi"),
+            c
+          ),
+        args: []
+      });
+
+    return qs;
   }
 
   async executeRawSql(queries: Query[]) {

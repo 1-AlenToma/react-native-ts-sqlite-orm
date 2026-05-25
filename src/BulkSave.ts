@@ -13,7 +13,7 @@ export default class BulkSave<
   T,
   D extends string
 > {
-  quries: (Query & { parseble?: boolean })[];
+  quries: Query[];
   private dbContext: IDataBaseExtender<D>;
   private keys: string[];
   private tableName: D;

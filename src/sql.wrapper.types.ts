@@ -4,7 +4,38 @@ import {
   IQuerySelector
 } from "./QuerySelector";
 
-export type Query = { sql: string, args: any[] };
+export type DBConfig = {
+  disableLog?: boolean;
+  // -- this could be usefull when using api, and you do not want to create transaction when setUpDataBase
+  avoidTransaction?: false;
+  // --- Prestanda & Cache ---
+  journal_mode?: "WAL" | "DELETE" | "TRUNCATE" | "PERSIST" | "MEMORY" | "OFF";
+  synchronous?: "OFF" | "NORMAL" | "FULL" | "EXTRA" | 0 | 1 | 2 | 3;
+  cache_size?: number;
+  mmap_size?: number;
+  page_size?: 512 | 1024 | 2048 | 4096 | 8192 | 16384 | 32768 | 65536;
+  temp_store?: "DEFAULT" | "FILE" | "MEMORY" | 0 | 1 | 2;
+  threads?: number;
+
+  // --- Säkerhet & Integritet ---
+  foreign_keys?: "ON" | "OFF" | true | false | 1 | 0;
+  recursive_triggers?: "ON" | "OFF" | true | false | 1 | 0;
+  read_uncommitted?: "ON" | "OFF" | true | false | 1 | 0;
+  ignore_check_constraints?: "ON" | "OFF" | true | false | 1 | 0;
+
+  // --- Lagring & Databasstruktur ---
+  encoding?: "UTF-8" | "UTF-16" | "UTF-16le" | "UTF-16be";
+  auto_vacuum?: "NONE" | "FULL" | "INCREMENTAL" | 0 | 1 | 2;
+  max_page_count?: number;
+  secure_delete?: "ON" | "OFF" | "FAST" | true | false | 1 | 0;
+
+  // --- Diagnostik & Analys ---
+  analysis_limit?: number;
+  optimize?: boolean;
+};
+
+
+export type Query = { sql: string, args: any[], parseble?: boolean };
 
 export type Operations = "READ" | "WRITE" | "Bulk";
 
@@ -490,6 +521,11 @@ export interface IDatabase<D extends string> {
    * execute an array of sql
    */
   executeRawSql: (queries: Query[]) => Promise<any>;
+
+  /**
+   * execute an array of sql
+   */
+  queriesToSql: (queries: Query[]) => Query[];
 
   /**
    * migrate new added or removed columns

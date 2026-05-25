@@ -31,11 +31,8 @@ const UseQuery = <
     operation: string
   ) => boolean
 ) => {
-  const [_, setUpdater] = useState<
-    undefined | number
-  >();
-  const [isLoading, setIsLoading] =
-    useState(true);
+  const [_, setUpdater] = useState<undefined | number>();
+  const [isLoading, setIsLoading] = useState(true);
   const dataRef = useRef<
     IQueryResultItem<T, D>[]
   >([]);
@@ -58,29 +55,15 @@ const UseQuery = <
         if (iQuery.toList !== undefined) {
           dataRef.current = await iQuery.toList();
         } else if (!Functions.isFunc(query)) {
-          const r = [] as IQueryResultItem<
-            T,
-            D
-          >[];
-          for (const x of await dbContext.find(
-            sQuery.sql,
-            sQuery.args,
-            tableName
-          )) {
-            r.push(
-              await createQueryResultType<T, D>(x, dbContext as any)
-            );
+          const r = [] as IQueryResultItem<T, D>[];
+          for (const x of await dbContext.find(sQuery.sql, sQuery.args, tableName)) {
+            r.push(await createQueryResultType<T, D>(x, dbContext as any));
           }
           dataRef.current = r;
         } else {
-          const r = [] as IQueryResultItem<
-            T,
-            D
-          >[];
+          const r = [] as IQueryResultItem<T, D>[];
           for (const x of await fn()) {
-            r.push(
-              await createQueryResultType<T, D>(x, dbContext as any)
-            );
+            r.push(await createQueryResultType<T, D>(x, dbContext as any));
           }
           dataRef.current = r;
         }
@@ -95,9 +78,7 @@ const UseQuery = <
 
   const update = () => {
     if (!refMounted.current) return;
-    setUpdater(
-      x => ((x ?? 0) > 100 ? 0 : x ?? 0) + 1
-    );
+    setUpdater(x => ((x ?? 0) > 100 ? 0 : x ?? 0) + 1);
   };
 
   const onSave = async (
@@ -114,9 +95,7 @@ const UseQuery = <
         setIsLoading(true);
         items = [
           ...items,
-          ...dataRef.current.filter(
-            x => !items.find(a => a.id == x.id)
-          )
+          ...dataRef.current.filter(x => !items.some(a => a.id == x.id))
         ];
         const itemsAdded = onItemChange(items);
         const r = [] as IQueryResultItem<T, D>[];
@@ -144,11 +123,8 @@ const UseQuery = <
       let updateList = false;
       const r = [...dataRef.current];
       items.forEach(a => {
-        if (r.find(x => a.id == x.id)) {
-          r.splice(
-            r.findIndex(x => a.id == x.id),
-            1
-          );
+        if (r.some(x => a.id == x.id)) {
+          r.splice(r.findIndex(x => a.id == x.id), 1);
           updateList = true;
         }
       });

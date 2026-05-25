@@ -23,7 +23,7 @@ export class Parent extends Table<TableNames>{
   // This is an abstract methods that must be implemented
   // This method will return the table setup that Database will be using later.
   config(){ 
-    return this.TableBuilder<Parent, TableNames>("Parents").
+    return this.TableBuilder<Parent>("Parents").
     column("name").
     objectPrototype(Parent.prototype).
     //unique acts as an Id too as the library will chack if there exist an item with the same field value and will update instead.
@@ -49,7 +49,7 @@ export class Child extends Table<TableNames>{
  }
   
 config()  {
-  return this.TableBuilder<Child, TableNames>("Childrens").
+  return this.TableBuilder<Child>().
     column("someField").
     column("parentId").number.nullable.
     hasParent<DetaliItems>("parent", "Parents", "parentId").

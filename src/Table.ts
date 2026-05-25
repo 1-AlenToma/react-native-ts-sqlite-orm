@@ -13,7 +13,7 @@ export default abstract class Table<D extends string> extends IId<D> implements 
 
     abstract config(): ITableBuilder<any, D>;
 
-    TableBuilder<T extends object, D extends string>(tableName: D) {
-        return TableBuilder<T, D>(tableName) as ITableBuilder<T, D>;
+    protected TableBuilder<T extends object>(tableName?: D) {
+        return TableBuilder<any, D>(tableName ?? this.tableName) as ITableBuilder<T, D>;
     }
 }

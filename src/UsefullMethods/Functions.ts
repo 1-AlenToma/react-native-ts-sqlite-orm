@@ -4,8 +4,7 @@ import { ColumnType, IDataBaseExtender, IId, ITableBuilder, Query } from '../sql
 import crypto from 'crypto-js';
 declare var __DEV__: boolean;
 class Functions {
-
-    reorderTables(jsonData: ITableBuilder<any, string>[]) {
+    reorderTables<D extends string>(jsonData: ITableBuilder<any, D>[]) {
         const sortedTables: any[] = [];
         const tableMap = Object.fromEntries(jsonData.map(table => [table.tableName, table]));
         const dependencyGraph = Object.fromEntries(jsonData.map(table => [table.tableName, new Set<string>()]));
@@ -45,7 +44,7 @@ class Functions {
             sortedTables.push(...unresolved); // Add them at the end to avoid breaking
         }
 
-        return sortedTables;
+        return sortedTables as ITableBuilder<any, D>[];
     }
 
     deleteWithContrains(tableName: string, db: IDataBaseExtender<string>, innerSelectSqlWhere: string, args: any[], sqls?: { constrain: any, sql: Query }[]) {

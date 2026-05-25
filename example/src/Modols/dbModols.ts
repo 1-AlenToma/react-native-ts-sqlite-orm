@@ -11,7 +11,7 @@ export class DetaliItems extends Table<TableNames> {
     }
 
     config() {
-        return this.TableBuilder<DetaliItems, TableNames>("DetaliItems")
+        return this.TableBuilder<DetaliItems>("DetaliItems")
             .column("title")
             .column("description").nullable
             .column("novel")
@@ -30,7 +30,7 @@ export class Chapters extends Table<TableNames> {
     }
 
     config() {
-        return this.TableBuilder<Chapters, TableNames>("Chapters")
+        return this.TableBuilder<Chapters>("Chapters")
             .column("chapterUrl").encrypt("testEncryptions")
             .column("detaliItem_Id").number.nullable
             .hasMany<ChaptersChildren>("children", "ChapterChildren", "childrenId")
@@ -47,7 +47,7 @@ export class ChaptersChildren extends Table<TableNames> {
     }
 
     config() {
-        return this.TableBuilder<ChaptersChildren, TableNames>("ChapterChildren")
+        return this.TableBuilder<ChaptersChildren>("ChapterChildren")
             .column("chapterUrl").encrypt("testEncryptions")
             .column("childrenId").number.nullable
             .constrain<Chapters>("childrenId", "Chapters", "id")
